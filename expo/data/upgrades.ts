@@ -92,31 +92,52 @@ const BUILDING_UPGRADE_NAMES: Record<string, string[]> = {
 
 // Tier spec — tiers 1-4 as before; tiers 5+ unlock every 50 counts after 100 (150, 200, 250, ...)
 interface TierSpec { count: number; mult: number; rarity: Rarity; costMult: number; needsSilkRoads?: boolean }
+
+// BALANCE NOTES:
+// All tier mults stack multiplicatively — GPS compounds fast. The fix is twofold:
+//   1. Keep early mults modest (×2–×5) so the cumulative doesn't explode.
+//   2. Use larger mults only at T5 (Silk Roads gate) as the one big "wow" moment.
+//   3. T6–T12: return to ×2–×3 range so GPS doesn't outrun cost growth.
+//   4. costMult grows ~7–10x per tier (T6+) to create a steady time wall.
+//   5. Extended tiers: mult ×1.5, costMult ×12 → ~8x longer per tier (sustainable).
+//
+// Cumulative GPS mult by T12: 2×3×5×10×8 × 3×3×2×2×2×2×2 ≈ 184,320×
+// (vs original: 2×3×5×10×25×35×60×100×175×300×500×1000 ≈ 41 quintillion×)
 const BASE_TIERS: TierSpec[] = [
-  { count: 10,  mult: 2,    rarity: "common",    costMult: 120 },
-  { count: 25,  mult: 3,    rarity: "uncommon",  costMult: 500 },
-  { count: 50,  mult: 5,    rarity: "rare",      costMult: 2_000 },
-  { count: 100, mult: 10,   rarity: "epic",      costMult: 8_000 },
-  { count: 150, mult: 25,   rarity: "legendary", costMult: 25_000, needsSilkRoads: true },
-  { count: 200, mult: 35,   rarity: "epic",      costMult: 300_000_000 },
-  { count: 250, mult: 60,   rarity: "rare",      costMult: 10_000_000_000 },
-  { count: 300, mult: 100,  rarity: "epic",      costMult: 300_000_000_000 },
-  { count: 350, mult: 175,  rarity: "legendary", costMult: 10_000_000_000_000 },
-  { count: 400, mult: 300,  rarity: "epic",      costMult: 300_000_000_000_000 },
-  { count: 450, mult: 500,  rarity: "legendary", costMult: 10_000_000_000_000_000 },
-  { count: 500, mult: 1000, rarity: "legendary", costMult: 300_000_000_000_000_000 },
+  // ── Early game ────────────────────────────────────────────────────────
+  { count: 10,  mult: 2,  rarity: "common",    costMult: 120 },
+  { count: 25,  mult: 3,  rarity: "uncommon",  costMult: 500 },
+  { count: 50,  mult: 5,  rarity: "rare",      costMult: 2_000 },
+  { count: 100, mult: 10, rarity: "epic",      costMult: 8_000 },
+  // T5: the big "Silk Roads" unlock moment — keep it rewarding (×8 feels great here)
+  { count: 150, mult: 8,  rarity: "legendary", costMult: 25_000, needsSilkRoads: true },
+
+  // ── Mid game (back to modest mults, smooth cost curve) ─────────────
+  // Original T6 was a jarring 12,000× cost cliff (25K→300M). Fixed to 7× steps.
+  { count: 200, mult: 3,  rarity: "epic",      costMult: 180_000 },         // 7.2× from T5
+  { count: 250, mult: 3,  rarity: "rare",      costMult: 1_300_000 },       // 7.2×
+  { count: 300, mult: 2,  rarity: "epic",      costMult: 9_000_000 },       // 7×
+
+  // ── Late game (10× cost growth, ×2 mults — steady wall) ───────────
+  { count: 350, mult: 2,  rarity: "legendary", costMult: 80_000_000 },      // 8.9×
+  { count: 400, mult: 2,  rarity: "epic",      costMult: 700_000_000 },     // 8.75×
+  { count: 450, mult: 2,  rarity: "legendary", costMult: 7_000_000_000 },   // 10×
+  { count: 500, mult: 2,  rarity: "legendary", costMult: 70_000_000_000 },  // 10×
 ];
 
-// Continue tiers every 50 levels up to 5000, with ever-growing mults/costs.
+// Continue tiers every 50 levels up to 5000.
+// FIXED: was mult ×1.8 / costMult ×30 per tier — GPS compounded so fast every extended
+// tier was an instant free purchase. Now: mult ×1.5 / costMult ×12 → ~8× longer each
+// tier, which creates a real late-game progression wall.
 function extendedTiers(): TierSpec[] {
   const list: TierSpec[] = [...BASE_TIERS];
-  let mult = 1000;
-  let costMult = 300_000_000_000_000_000;
+  let mult = 2;
+  let costMult = 70_000_000_000;
   const rarityCycle: Rarity[] = ["epic", "legendary", "rare", "epic", "legendary"];
   let idx = 0;
   for (let count = 550; count <= 5000; count += 50) {
-    mult = Math.floor(mult * 1.8);
-    costMult = costMult * 30;
+    mult = Math.round(mult * 1.5);
+    costMult = costMult * 12;
     list.push({
       count,
       mult,
