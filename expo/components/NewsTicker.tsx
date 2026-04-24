@@ -14,7 +14,7 @@ export default function NewsTicker() {
     const loop = Animated.loop(
       Animated.timing(translate, {
         toValue: -width,
-        duration: 18000,
+        duration: 12000,
         useNativeDriver: true,
         easing: Easing.linear,
       }),
@@ -31,7 +31,7 @@ export default function NewsTicker() {
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      <Animated.Text numberOfLines={1} style={[styles.text, { transform: [{ translateX: translate }] }]}>
+      <Animated.Text numberOfLines={2} style={[styles.text, { transform: [{ translateX: translate }] }]}>
         {NEWS_MESSAGES[idx]}
       </Animated.Text>
     </View>
