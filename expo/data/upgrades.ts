@@ -198,16 +198,16 @@ function buildingUpgrades(): Upgrade[] {
 }
 
 const GLOBAL_UPGRADES: Upgrade[] = [
-  { id: "global_1", buildingId: "_global", tier: 0, rarity: "uncommon", name: "Tax Reform", description: "All buildings +20% GPS.", cost: 900, requires: { totalGold: 1000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.2 }] },
+  { id: "global_1", buildingId: "_global", tier: 0, rarity: "uncommon", name: "Tax Reform", description: "All buildings +30% GPS.", cost: 900, requires: { totalGold: 1000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.3 }] },
   { id: "global_2", buildingId: "_global", tier: 0, rarity: "uncommon", name: "Royal Proclamation", description: "Click power ×2.", cost: 8000, requires: { totalGold: 10000 }, effects: [{ kind: "click_mult", multiplier: 2 }] },
   { id: "global_3", buildingId: "_global", tier: 0, rarity: "rare", name: "Kingdom Charter", description: "Clicks add 1% of total GPS to earnings.", cost: 100_000, requires: { totalGold: 150_000 }, effects: [{ kind: "custom" }] },
-  { id: "global_4", buildingId: "_global", tier: 0, rarity: "rare", name: "Golden Age", description: "All production ×1.5.", cost: 1_200_000, requires: { totalGold: 2_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
+  { id: "global_4", buildingId: "_global", tier: 0, rarity: "rare", name: "Golden Age", description: "All production ×2.", cost: 1_200_000, requires: { totalGold: 2_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 2 }] },
   { id: "global_5", buildingId: "_global", tier: 0, rarity: "epic", name: "Imperial Decree", description: "Each building owned adds +0.3% to all GPS.", cost: 15_000_000, requires: { totalGold: 30_000_000 }, effects: [{ kind: "building_count_bonus", value: 0.003 }] },
-  { id: "global_6", buildingId: "_global", tier: 0, rarity: "epic", name: "Manifest Destiny", description: "All production ×1.5. Click power ×2.", cost: 200_000_000, requires: { totalGold: 500_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }, { kind: "click_mult", multiplier: 2 }] },
-  { id: "global_7", buildingId: "_global", tier: 0, rarity: "legendary", name: "Eternal Kingdom", description: "All production ×1.5. You are immortalised in legend.", cost: 2_000_000_000, requires: { totalGold: 10_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
-  { id: "global_8", buildingId: "_global", tier: 0, rarity: "legendary", name: "Age of Gold", description: "All production ×1.5.", cost: 250_000_000, requires: { totalGold: 2_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
-  { id: "global_9", buildingId: "_global", tier: 0, rarity: "legendary", name: "Continental Empire", description: "All production ×1.5. Click power ×3.", cost: 5_000_000_000, requires: { totalGold: 50_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }, { kind: "click_mult", multiplier: 3 }] },
-  { id: "global_10", buildingId: "_global", tier: 0, rarity: "legendary", name: "World Sovereign", description: "All production ×1.5.", cost: 100_000_000_000, requires: { totalGold: 1_000_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
+  { id: "global_6", buildingId: "_global", tier: 0, rarity: "epic", name: "Manifest Destiny", description: "All production ×2. Click power ×2.", cost: 200_000_000, requires: { totalGold: 500_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 2 }, { kind: "click_mult", multiplier: 2 }] },
+  { id: "global_7", buildingId: "_global", tier: 0, rarity: "legendary", name: "Eternal Kingdom", description: "All production ×2. You are immortalised in legend.", cost: 2_000_000_000, requires: { totalGold: 10_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 2 }] },
+  { id: "global_8", buildingId: "_global", tier: 0, rarity: "legendary", name: "Age of Gold", description: "All production ×2.", cost: 250_000_000, requires: { totalGold: 2_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 2 }] },
+  { id: "global_9", buildingId: "_global", tier: 0, rarity: "legendary", name: "Continental Empire", description: "All production ×2. Click power ×3.", cost: 5_000_000_000, requires: { totalGold: 50_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 2 }, { kind: "click_mult", multiplier: 3 }] },
+  { id: "global_10", buildingId: "_global", tier: 0, rarity: "legendary", name: "World Sovereign", description: "All production ×2.", cost: 100_000_000_000, requires: { totalGold: 1_000_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 2 }] },
   ...((): Upgrade[] => {
     const names = [
       "Golden Epoch", "Celestial Charter", "Astral Mandate", "Starbound Realm", "Cosmic Dominion",
