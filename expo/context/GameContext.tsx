@@ -441,17 +441,6 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
     pushToast("Kingdom wiped.", "A new tale begins.", "info");
   }, [pushToast]);
 
-  // Admin panel: direct state patch with recalc
-  const _patchState = useCallback(
-    (updater: (prev: GameState) => GameState) => {
-      setState((prev) => {
-        const next = updater(prev);
-        return recalc(next);
-      });
-    },
-    [recalc],
-  );
-
   const prestigeReward = useMemo(
     () => calculatePrestigeSeals(state),
     [state],
@@ -477,7 +466,6 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       pushToast,
       buyLegacyUpgrade,
       legacyUpgrades: LEGACY_UPGRADES,
-      _patchState,
     }),
     [
       state,
@@ -497,7 +485,6 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       prestigeReward,
       pushToast,
       buyLegacyUpgrade,
-      _patchState,
     ],
   );
 });

@@ -17,7 +17,6 @@ import AchievementsModal from "@/components/AchievementsModal";
 import SkillTreeSheet from "@/components/SkillTreeSheet";
 import MilestoneToast from "@/components/MilestoneToast";
 import IconPlaceholder from "@/components/IconPlaceholder";
-import AdminPanel from "@/components/AdminPanel";
 
 const BUY_MODES: ("1" | "10" | "max")[] = ["1", "10", "max"];
 
@@ -40,7 +39,6 @@ export default function MainScreen() {
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showSkillTree, setShowSkillTree] = useState<boolean>(false);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
-  const [showAdmin, setShowAdmin] = useState<boolean>(false);
 
   const eligible = canPrestige(state);
   const buildingTypesOwned = Object.values(state.buildings).filter((b) => b.count >= 1).length;
@@ -132,14 +130,6 @@ export default function MainScreen() {
         >
           <Settings color={COLORS.gold3} size={22} />
         </Pressable>
-        <Pressable
-          onLongPress={() => setShowAdmin(true)}
-          delayLongPress={800}
-          style={styles.settingsBtn}
-          testID="admin-btn"
-        >
-          <Text style={{ fontSize: 18 }}>👑</Text>
-        </Pressable>
       </View>
 
       <TopPanel />
@@ -202,7 +192,6 @@ export default function MainScreen() {
       />
       <SkillTreeSheet visible={showSkillTree} onClose={() => setShowSkillTree(false)} />
       <AchievementsModal visible={showAchievements} onClose={() => setShowAchievements(false)} />
-      <AdminPanel visible={showAdmin} onClose={() => setShowAdmin(false)} />
       <MilestoneToast />
     </SafeAreaView>
   );
