@@ -1,0 +1,12 @@
+export const BUILDING_IMAGES: Record<string, number | null> = {
+  peasant_hut: null,
+  market_stall: null,
+  blacksmith: null,
+  tavern: null,
+  mill: null,
+  barracks: null,
+  cathedral: null,
+  castle_tower: null,
+  royal_treasury: null,
+  palace: null,
+};
