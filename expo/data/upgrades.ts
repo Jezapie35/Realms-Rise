@@ -232,7 +232,7 @@ const GLOBAL_UPGRADES: Upgrade[] = [
       });
       cost *= 25;
       gold *= 30;
-      mult = Math.floor(mult * 1.2);
+      mult = Math.floor(mult * 1.5);
     }
     return out;
   })(),
