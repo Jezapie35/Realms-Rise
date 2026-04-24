@@ -351,20 +351,22 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         }
 
         const fresh: GameState = {
-          ...prev,
-          gold: startGold,
-          totalGoldEarned: prev.totalGoldEarned,
-          prestigeCount: prev.prestigeCount + 1,
-          sealsAvailable: prev.sealsAvailable + reward,
-          sealsTotal: prev.sealsTotal + reward,
-          buildings,
-          purchasedUpgrades,
-          activeBonus: null,
-          carryOverUpgrade: null,
-          lastTimestamp: now,
-          runStartTime: now,
-          lastInterestTick: now,
-          lastRunGps: prev.totalGPS,
+        ...prev,
+        gold: startGold,
+        totalGoldEarned: startGold,  // was prev.totalGoldEarned
+        prestigeCount: prev.prestigeCount + 1,
+        sealsAvailable: prev.sealsAvailable + reward,
+        sealsTotal: prev.sealsTotal + reward,
+        buildings,
+        purchasedUpgrades,
+        activeBonus: null,
+        carryOverUpgrade: null,
+        lastTimestamp: now,
+        runStartTime: now,
+        lastInterestTick: now,
+        lastRunGps: prev.totalGPS,
+        triggeredMilestones: [],  // add this line
+        };
         };
         pushToast("Sovereignty Declared!", `+${reward} Royal Seal${reward === 1 ? "" : "s"}`, "success");
         return recalc(fresh, now);
