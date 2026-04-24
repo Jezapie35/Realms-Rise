@@ -38,16 +38,14 @@ export default function NewsTicker() {
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      <View style={styles.inner}> {/* NEW: tighter clipping boundary */}
-        <Animated.Text
-          numberOfLines={1}
-          shouldRasterizeIOS          // NEW: forces clean GPU texture on macOS/iOS
-          onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
-          style={[styles.text, { transform: [{ translateX: translate }] }]}
-        >
-          {NEWS_MESSAGES[idx]}
-        </Animated.Text>
-      </View>
+      <Animated.Text
+        numberOfLines={1}
+        shouldRasterizeIOS
+        onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
+        style={[styles.text, { transform: [{ translateX: translate }] }]}
+      >
+        {NEWS_MESSAGES[idx]}
+      </Animated.Text>
     </View>
   );
 }
@@ -61,11 +59,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     paddingHorizontal: 4,
-  },
-  inner: {                // NEW
-    flex: 1,
-    overflow: "hidden",
-    height: 28,
   },
   text: {
     color: COLORS.gold3,
