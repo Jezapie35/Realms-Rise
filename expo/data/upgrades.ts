@@ -217,7 +217,7 @@ const GLOBAL_UPGRADES: Upgrade[] = [
     const out: Upgrade[] = [];
     let cost = 500_000_000_000;
     let gold = 10_000_000_000_000;
-    let mult = 6;
+    let mult = 1.5;
     for (let i = 0; i < names.length; i++) {
       out.push({
         id: `global_${11 + i}`,
@@ -285,8 +285,8 @@ const SYNERGY_UPGRADES: Upgrade[] = [
       "Divine Hegemony", "Starlit Realm", "Worldforge", "Eternity's Reign",
     ];
     let cost = 50_000_000_000_000;
-    let gpsMult = 7;
-    let clickMult = 15;
+    let gpsMult = 2;
+    let clickMult = 3;
     for (let i = 0; i < names.length; i++) {
       const threshold = 300 + i * 100; // 300, 400, ..., 1000
       const palaceT = Math.floor(threshold / 2);
