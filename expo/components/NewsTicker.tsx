@@ -20,7 +20,7 @@ export default function NewsTicker() {
       }),
     );
     loop.start();
-    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), 18000);
+    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), 20000);
     return () => {
       loop.stop();
       clearInterval(iv);
@@ -31,7 +31,7 @@ export default function NewsTicker() {
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      <Animated.Text numberOfLines={2} style={[styles.text, { transform: [{ translateX: translate }] }]}>
+      <Animated.Text numberOfLines={1} style={[styles.text, { transform: [{ translateX: translate }] }]}>
         {NEWS_MESSAGES[idx]}
       </Animated.Text>
     </View>
