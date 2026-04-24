@@ -28,11 +28,11 @@ export default function NewsTicker() {
 
     startLoop();
 
-    const iv = setInterval(() => {
-      loopRef.current?.stop();
-      setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
-      startLoop();
-    }, 12000);
+   const iv = setInterval(() => {
+     loopRef.current?.stop();
+    setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
+  setTimeout(() => startLoop(), 50); // wait for text to render first
+}, 12000);
 
     return () => {
       loopRef.current?.stop();
