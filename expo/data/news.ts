@@ -19,5 +19,5 @@ export const NEWS_MESSAGES: string[] = [
   "New law passed making hoarding gold mandatory for royal subjects.",
   "Tavern dog elected town mascot in landslide victory over the mayor.",
   "Blacksmith's latest work described as 'derivative' by local art critics.",
-  "Dad give me $2 please",
+  "Dad give me $2 please.",
 ];
