@@ -106,8 +106,8 @@ interface TierSpec { count: number; mult: number; rarity: Rarity; costMult: numb
 const BASE_TIERS: TierSpec[] = [
   // ── Early game ────────────────────────────────────────────────────────
   { count: 10,  mult: 2,  rarity: "common",    costMult: 120 },
-  { count: 25,  mult: 3,  rarity: "uncommon",  costMult: 500 },
-  { count: 50,  mult: 5,  rarity: "rare",      costMult: 2_000 },
+  { count: 25,  mult: 4,  rarity: "uncommon",  costMult: 500 },
+  { count: 50,  mult: 6,  rarity: "rare",      costMult: 2_000 },
   { count: 100, mult: 10, rarity: "epic",      costMult: 8_000 },
   // T5: the big "Silk Roads" unlock moment — keep it rewarding (×8 feels great here)
   { count: 150, mult: 8,  rarity: "legendary", costMult: 25_000, needsSilkRoads: true },
