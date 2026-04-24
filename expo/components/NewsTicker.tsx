@@ -1,23 +1,28 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Easing, LayoutChangeEvent, StyleSheet, View } from "react-native";
+import { Animated, Easing, LayoutChangeEvent, StyleSheet, View, Text } from "react-native";
 import { COLORS, FONTS } from "@/constants/colors";
 import { NEWS_MESSAGES } from "@/data/news";
 
 export default function NewsTicker() {
   const [width, setWidth] = useState<number>(0);
+  const [textWidth, setTextWidth] = useState<number>(0);
   const [idx, setIdx] = useState<number>(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const translate = useRef(new Animated.Value(0)).current;
   const loopRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
-    if (width === 0) return;
+    if (width === 0 || textWidth === 0) return;
+
+    const totalDistance = width + textWidth;
+    const speed = 80; // pixels per second
+    const duration = (totalDistance / speed) * 1000;
 
     const startLoop = () => {
       translate.setValue(width);
       const loop = Animated.loop(
         Animated.timing(translate, {
-          toValue: -width,
-          duration: 12000,
+          toValue: -textWidth,
+          duration,
           useNativeDriver: true,
           easing: Easing.linear,
         }),
@@ -28,22 +33,47 @@ export default function NewsTicker() {
 
     startLoop();
 
-   const iv = setInterval(() => {
-     loopRef.current?.stop();
-    setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
-  setTimeout(() => startLoop(), 50); // wait for text to render first
-}, 12000);
+    const iv = setInterval(() => {
+      loopRef.current?.stop();
+      setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
+    }, duration);
 
     return () => {
       loopRef.current?.stop();
       clearInterval(iv);
     };
-  }, [width]);
+  }, [width, textWidth]);
+
+  useEffect(() => {
+    if (width === 0 || textWidth === 0) return;
+    const totalDistance = width + textWidth;
+    const speed = 80;
+    const duration = (totalDistance / speed) * 1000;
+
+    translate.setValue(width);
+    const loop = Animated.loop(
+      Animated.timing(translate, {
+        toValue: -textWidth,
+        duration,
+        useNativeDriver: true,
+        easing: Easing.linear,
+      }),
+    );
+    loopRef.current = loop;
+    loop.start();
+  }, [idx]);
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
+      <Text
+        numberOfLines={1}
+        style={[styles.text, { position: "absolute", opacity: 0 }]}
+        onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
+      >
+        {NEWS_MESSAGES[idx]}
+      </Text>
       <Animated.Text
         numberOfLines={1}
         shouldRasterizeIOS
