@@ -241,7 +241,7 @@ export function calculateBuyMaxCount(
 }
 
 export function calculatePrestigeSeals(state: GameState): number {
-  const THRESHOLD = 50_000_000;
+  const THRESHOLD = 100_000_000_000;
   if (state.totalGoldEarned < THRESHOLD) return 0;
   let seals = Math.floor(Math.log10(state.totalGoldEarned / THRESHOLD) * 3);
   seals = Math.max(seals, 1);
@@ -256,7 +256,7 @@ export function calculatePrestigeSeals(state: GameState): number {
 }
 
 export function canPrestige(state: GameState): boolean {
-  if (state.totalGoldEarned < 50_000_000) return false;
+  if (state.totalGoldEarned < 100_000_000_000) return false;
   const differentBuildingsOwned = Object.values(state.buildings).filter((b) => b.count >= 1).length;
   return differentBuildingsOwned >= 5;
 }
