@@ -5,33 +5,44 @@ import { NEWS_MESSAGES } from "@/data/news";
 
 export default function NewsTicker() {
   const [width, setWidth] = useState<number>(0);
+  const [textWidth, setTextWidth] = useState<number>(0); // NEW
   const [idx, setIdx] = useState<number>(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const translate = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (width === 0) return;
+    if (width === 0 || textWidth === 0) return; // CHANGED: also wait for textWidth
+
+    const totalDistance = width + textWidth;
+    const speed = (width * 2) / 12000;
+    const duration = totalDistance / speed;
+
     translate.setValue(width);
     const loop = Animated.loop(
       Animated.timing(translate, {
-        toValue: -width,
-        duration: 12000,
+        toValue: -textWidth, // CHANGED: was -width
+        duration,            // CHANGED: was 12000
         useNativeDriver: true,
         easing: Easing.linear,
       }),
     );
     loop.start();
-    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), 30000);
+
+    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), duration + 1000); // CHANGED: was 30000
     return () => {
       loop.stop();
       clearInterval(iv);
     };
-  }, [translate, width]);
+  }, [translate, width, textWidth]); // CHANGED: added textWidth dependency
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      <Animated.Text numberOfLines={1} style={[styles.text, { transform: [{ translateX: translate }] }]}>
+      <Animated.Text
+        numberOfLines={1}
+        onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)} // NEW
+        style={[styles.text, { transform: [{ translateX: translate }] }]}
+      >
         {NEWS_MESSAGES[idx]}
       </Animated.Text>
     </View>
