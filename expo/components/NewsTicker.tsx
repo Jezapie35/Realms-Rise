@@ -14,7 +14,7 @@ export default function NewsTicker() {
     const loop = Animated.loop(
       Animated.timing(translate, {
         toValue: -width,
-        duration: 18000,
+        duration: 12000,
         useNativeDriver: true,
         easing: Easing.linear,
       }),
