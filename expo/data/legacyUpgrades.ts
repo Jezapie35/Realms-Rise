@@ -76,7 +76,7 @@ export function calculateLegacyBonuses(
   };
 
   // legacy_1: 100,000 starting gold (description updated)
-  if (has("legacy_1")) startingGold += 100000;
+  if (has("legacy_1")) startingGold += 100_000;
   // legacy_3/4/5/9/11: single-building ×1.5 (was ×2)
   if (has("legacy_3")) addBuilding("peasant_hut", 1.5);
   if (has("legacy_4")) addBuilding("market_stall", 1.5);
