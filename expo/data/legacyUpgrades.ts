@@ -9,7 +9,7 @@ export interface LegacyUpgrade {
 
 export const LEGACY_UPGRADES: LegacyUpgrade[] = [
   // Tier 1 — cheap quality-of-life, no raw multipliers
-  { id: "legacy_1", name: "Ancestral Memory", cost: 2, description: "Start each new run with 1,000 gold instead of 0.", effect: "start_gold_200", requires: [] },
+  { id: "legacy_1", name: "Ancestral Memory", cost: 2, description: "Start each new run with 100,000 gold instead of 0.", effect: "start_gold_200", requires: [] },
   { id: "legacy_2", name: "Kingdom Records", cost: 2, description: "The first building of each type costs 30% less.", effect: "first_building_half_price", requires: [] },
   // Tier 2 — single-building permanent ×1.5 (was ×2 — permanent across all runs is strong, toned)
   { id: "legacy_3", name: "Veteran Peasants", cost: 4, description: "Peasant Huts produce ×1.5 permanently.", effect: "peasant_hut_permanent_2x", requires: ["legacy_1"] },
@@ -76,7 +76,7 @@ export function calculateLegacyBonuses(
   };
 
   // legacy_1: 1,000 starting gold (description updated)
-  if (has("legacy_1")) startingGold += 1000;
+  if (has("legacy_1")) startingGold += 100000;
   // legacy_3/4/5/9/11: single-building ×1.5 (was ×2)
   if (has("legacy_3")) addBuilding("peasant_hut", 1.5);
   if (has("legacy_4")) addBuilding("market_stall", 1.5);
