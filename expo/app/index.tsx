@@ -93,7 +93,7 @@ export default function MainScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.lockedTitle}>Declare Sovereignty</Text>
             <Text style={styles.lockedSub}>
-              Requires 50M gold · {formatGold(state.totalGoldEarned)} / 50M
+              Requires 100b gold · {formatGold(state.totalGoldEarned)} / 100b
             </Text>
             <Text style={styles.lockedSub}>
               Requires 5 building types · {buildingTypesOwned} / 5
