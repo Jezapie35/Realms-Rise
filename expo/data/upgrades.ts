@@ -359,11 +359,11 @@ const SYNERGY_UPGRADES: Upgrade[] = [
 
 const CLICK_UPGRADES: Upgrade[] = [
   { id: "click_1", buildingId: "_click", tier: 0, rarity: "rare", name: "Better Grip", description: "Click power ×2.", cost: 2_000, requires: { totalClicks: 200 }, effects: [{ kind: "click_mult", multiplier: 2 }] },
-  { id: "click_2", buildingId: "_click", tier: 0, rarity: "rare", name: "Royal Touch", description: "Click power equals 1% of total GPS (if higher).", cost: 100_000, requires: { totalClicks: 2_000 }, effects: [{ kind: "custom" }] },
-  { id: "click_3", buildingId: "_click", tier: 0, rarity: "epic", name: "Midas Touch", description: "Click power ×5.", cost: 8_000_000, requires: { totalClicks: 20_000 }, effects: [{ kind: "click_mult", multiplier: 5 }] },
-  { id: "click_4", buildingId: "_click", tier: 0, rarity: "legendary", name: "The Golden Fist", description: "Click power ×10. Chance to spawn Golden Coins.", cost: 500_000_000, requires: { totalClicks: 150_000 }, effects: [{ kind: "click_mult", multiplier: 10 }] },
-  { id: "click_5", buildingId: "_click", tier: 0, rarity: "legendary", name: "Hand of Kings", description: "Click power ×15.", cost: 250_000_000, requires: { totalClicks: 500_000 }, effects: [{ kind: "click_mult", multiplier: 15 }] },
-  { id: "click_6", buildingId: "_click", tier: 0, rarity: "legendary", name: "Fingers of Fate", description: "Click power ×25.", cost: 10_000_000_000, requires: { totalClicks: 2_000_000 }, effects: [{ kind: "click_mult", multiplier: 25 }] },
+  { id: "click_2", buildingId: "_click", tier: 0, rarity: "rare", name: "Royal Touch", description: "Click power equals 1% of total GPS (if higher).", cost: 100_000, requires: { totalClicks: 1_000 }, effects: [{ kind: "custom" }] },
+  { id: "click_3", buildingId: "_click", tier: 0, rarity: "epic", name: "Midas Touch", description: "Click power ×5.", cost: 8_000_000, requires: { totalClicks: 5_000 }, effects: [{ kind: "click_mult", multiplier: 5 }] },
+  { id: "click_4", buildingId: "_click", tier: 0, rarity: "legendary", name: "The Golden Fist", description: "Click power ×10. Chance to spawn Golden Coins.", cost: 500_000_000, requires: { totalClicks: 10_000 }, effects: [{ kind: "click_mult", multiplier: 10 }] },
+  { id: "click_5", buildingId: "_click", tier: 0, rarity: "legendary", name: "Hand of Kings", description: "Click power ×15.", cost: 250_000_000, requires: { totalClicks: 25_000 }, effects: [{ kind: "click_mult", multiplier: 15 }] },
+  { id: "click_6", buildingId: "_click", tier: 0, rarity: "legendary", name: "Fingers of Fate", description: "Click power ×25.", cost: 10_000_000_000, requires: { totalClicks: 50_000 }, effects: [{ kind: "click_mult", multiplier: 25 }] },
   ...((): Upgrade[] => {
     const names = [
       "Sovereign Touch", "Crown of Fingers", "Touch of Heavens", "The Infinite Click",
