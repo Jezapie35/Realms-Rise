@@ -206,8 +206,8 @@ const GLOBAL_UPGRADES: Upgrade[] = [
   { id: "global_6", buildingId: "_global", tier: 0, rarity: "epic", name: "Manifest Destiny", description: "All production ×1.5. Click power ×2.", cost: 200_000_000, requires: { totalGold: 500_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }, { kind: "click_mult", multiplier: 2 }] },
   { id: "global_7", buildingId: "_global", tier: 0, rarity: "legendary", name: "Eternal Kingdom", description: "All production ×1.5. You are immortalised in legend.", cost: 2_000_000_000, requires: { totalGold: 10_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
   { id: "global_8", buildingId: "_global", tier: 0, rarity: "legendary", name: "Age of Gold", description: "All production ×1.5.", cost: 250_000_000, requires: { totalGold: 2_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
-  { id: "global_9", buildingId: "_global", tier: 0, rarity: "legendary", name: "Continental Empire", description: "All production ×1.5. Click power ×4.", cost: 5_000_000_000, requires: { totalGold: 50_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }, { kind: "click_mult", multiplier: 4 }] },
-  { id: "global_10", buildingId: "_global", tier: 0, rarity: "legendary", name: "World Sovereign", description: "All production ×2.", cost: 100_000_000_000, requires: { totalGold: 1_000_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 2 }] },
+  { id: "global_9", buildingId: "_global", tier: 0, rarity: "legendary", name: "Continental Empire", description: "All production ×1.5. Click power ×3.", cost: 5_000_000_000, requires: { totalGold: 50_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }, { kind: "click_mult", multiplier: 3 }] },
+  { id: "global_10", buildingId: "_global", tier: 0, rarity: "legendary", name: "World Sovereign", description: "All production ×1.5.", cost: 100_000_000_000, requires: { totalGold: 1_000_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
   ...((): Upgrade[] => {
     const names = [
       "Golden Epoch", "Celestial Charter", "Astral Mandate", "Starbound Realm", "Cosmic Dominion",
