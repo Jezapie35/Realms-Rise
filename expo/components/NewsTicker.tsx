@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Easing, LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, LayoutChangeEvent, StyleSheet, View } from "react-native";
 import { COLORS, FONTS } from "@/constants/colors";
 import { NEWS_MESSAGES } from "@/data/news";
 
 export default function NewsTicker() {
   const [width, setWidth] = useState<number>(0);
-  const [textWidth, setTextWidth] = useState<number>(0); // NEW
+  const [textWidth, setTextWidth] = useState<number>(0);
   const [idx, setIdx] = useState<number>(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const translate = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (width === 0 || textWidth === 0) return; // CHANGED: also wait for textWidth
+    if (width === 0 || textWidth === 0) return;
 
     const totalDistance = width + textWidth;
     const speed = (width * 2) / 12000;
@@ -19,32 +19,35 @@ export default function NewsTicker() {
     translate.setValue(width);
     const loop = Animated.loop(
       Animated.timing(translate, {
-        toValue: -textWidth, // CHANGED: was -width
-        duration,            // CHANGED: was 12000
+        toValue: -textWidth,
+        duration,
         useNativeDriver: true,
         easing: Easing.linear,
       }),
     );
     loop.start();
 
-    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), duration + 1000); // CHANGED: was 30000
+    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), duration + 1000);
     return () => {
       loop.stop();
       clearInterval(iv);
     };
-  }, [translate, width, textWidth]); // CHANGED: added textWidth dependency
+  }, [translate, width, textWidth]);
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      <Animated.Text
-        numberOfLines={1}
-        onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)} // NEW
-        style={[styles.text, { transform: [{ translateX: translate }] }]}
-      >
-        {NEWS_MESSAGES[idx]}
-      </Animated.Text>
+      <View style={styles.inner}> {/* NEW: tighter clipping boundary */}
+        <Animated.Text
+          numberOfLines={1}
+          shouldRasterizeIOS          // NEW: forces clean GPU texture on macOS/iOS
+          onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
+          style={[styles.text, { transform: [{ translateX: translate }] }]}
+        >
+          {NEWS_MESSAGES[idx]}
+        </Animated.Text>
+      </View>
     </View>
   );
 }
@@ -58,6 +61,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     paddingHorizontal: 4,
+  },
+  inner: {                // NEW
+    flex: 1,
+    overflow: "hidden",
+    height: 28,
   },
   text: {
     color: COLORS.gold3,
