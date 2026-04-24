@@ -50,29 +50,31 @@ export function calculateBuildingGPS(
 
   // Skill tree building-specific
   let commerceMult = 1;
-  if (buildingId === "market_stall" && unlockedSkillNodes.includes("commerce_2a")) commerceMult *= 3;
+  // Merchant Guild: Market Stalls ×2
+  if (buildingId === "market_stall" && unlockedSkillNodes.includes("commerce_2a")) commerceMult *= 2;
+  // War Machine: Barracks and Castle Tower ×2
   if (buildingId === "barracks" || buildingId === "castle_tower") {
-    if (unlockedSkillNodes.includes("military_2a")) gps *= 3;
+    if (unlockedSkillNodes.includes("military_2a")) gps *= 2;
     if (unlockedSkillNodes.includes("war_drums")) gps *= 2;
   }
-  if (buildingId === "cathedral" && unlockedSkillNodes.includes("faith_2a")) gps *= 3;
-  if (buildingId === "palace" && unlockedSkillNodes.includes("lineage_3b")) gps *= 5;
-  if (buildingId === "royal_treasury" && unlockedSkillNodes.includes("lineage_3b")) gps *= 2;
+  // Sacred Rites: Cathedral ×2
+  if (buildingId === "cathedral" && unlockedSkillNodes.includes("faith_2a")) gps *= 2;
+  // Legacy of Builders: Palace ×3, Royal Treasury ×1.5
+  if (buildingId === "palace" && unlockedSkillNodes.includes("lineage_3b")) gps *= 3;
+  if (buildingId === "royal_treasury" && unlockedSkillNodes.includes("lineage_3b")) gps *= 1.5;
 
-  // Royal Exchange: commerce multipliers apply ×2
-  if (unlockedSkillNodes.includes("commerce_4") && commerceMult > 1) commerceMult *= 2;
+  // Royal Exchange capstone: Market Stalls ×3 total (×2 base × additional ×1.5), building costs also handled in calculateBuildingCost
+  if (unlockedSkillNodes.includes("commerce_4") && buildingId === "market_stall") commerceMult *= 1.5;
   gps *= commerceMult;
 
-  // Economic Union — cross branch commerce/military cross-apply
+  // Economic Union — cross branch: all buildings ×1.5
   if (unlockedSkillNodes.includes("cross_1")) {
-    if (buildingId === "market_stall" || buildingId === "barracks" || buildingId === "castle_tower") {
-      gps *= 1.5;
-    }
+    gps *= 1.5;
   }
 
-  // Holy Land / Pilgrim Road — early-run boost
-  if (unlockedSkillNodes.includes("faith_2b") && now - runStartTime < 90_000) {
-    gps *= 3;
+  // Pilgrim Road — early-run boost: ×2 for first 60s
+  if (unlockedSkillNodes.includes("faith_2b") && now - runStartTime < 60_000) {
+    gps *= 2;
   }
 
   // Active gps bonus
@@ -120,12 +122,12 @@ export function calculateTotalGPS(state: GameState, now: number = Date.now()): n
   }
 
   // Skill tree globals
-  if (state.unlockedSkillNodes.includes("commerce_1")) total *= 1.2;
-  if (state.unlockedSkillNodes.includes("cross_2")) total *= 2;
-  if (state.unlockedSkillNodes.includes("pinnacle")) total *= 10;
+  if (state.unlockedSkillNodes.includes("commerce_1")) total *= 1.15;
+  if (state.unlockedSkillNodes.includes("cross_2")) total *= 1.5;
+  if (state.unlockedSkillNodes.includes("pinnacle")) total *= 5;
   if (state.unlockedSkillNodes.includes("lineage_4")) {
     const stacks = Math.min(state.prestigeCount, 10);
-    total *= Math.pow(1.5, stacks);
+    total *= Math.pow(1.3, stacks);
   }
 
   // Apply legacy bonuses as the final multiplier
@@ -144,8 +146,8 @@ export function calculateGoldPerClick(
   const u = state.unlockedSkillNodes;
 
   if (u.includes("military_1")) mult *= 2;
-  if (u.includes("military_4")) mult *= 5;
-  if (u.includes("pinnacle")) mult *= 10;
+  if (u.includes("military_4")) mult *= 3;
+  if (u.includes("pinnacle")) mult *= 5;
 
   // Click upgrades
   for (const id of state.purchasedUpgrades) {
@@ -156,16 +158,16 @@ export function calculateGoldPerClick(
     }
   }
 
-  // Standing Army — 0.1% per building owned
+  // Standing Army — 0.05% per building owned
   if (u.includes("military_3a")) {
     const n = totalBuildingCount(state.buildings);
-    mult *= 1 + n * 0.001;
+    mult *= 1 + n * 0.0005;
   }
 
-  // Lineage Eternal Throne stack
+  // Lineage Eternal Throne stack: ×1.3 per prestige up to 10
   if (u.includes("lineage_4")) {
     const stacks = Math.min(state.prestigeCount, 10);
-    mult *= Math.pow(1.5, stacks);
+    mult *= Math.pow(1.3, stacks);
   }
 
   if (state.activeBonus?.type === "click_boost" && now < state.activeBonus.expiresAt && state.activeBonus.multiplier) {
@@ -197,7 +199,8 @@ export function calculateBuildingCost(
   const b = BUILDING_BY_ID[buildingId];
   if (!b) return 0;
   let cost = Math.floor(b.baseCost * Math.pow(1.15, currentCount));
-  if (unlockedSkillNodes.includes("commerce_2b")) cost = Math.floor(cost * 0.75);
+  if (unlockedSkillNodes.includes("commerce_2b")) cost = Math.floor(cost * 0.85);
+  if (unlockedSkillNodes.includes("commerce_4")) cost = Math.floor(cost * 0.90);
   // Legacy — Kingdom Records: first of each type costs 50% less
   if (currentCount === 0 && legacyUpgrades.includes("legacy_2")) {
     cost = Math.floor(cost * 0.5);
@@ -241,7 +244,7 @@ export function calculateBuyMaxCount(
 }
 
 export function calculatePrestigeSeals(state: GameState): number {
-  const THRESHOLD = 50_000_000;
+  const THRESHOLD = 100_000_000_000;
   if (state.totalGoldEarned < THRESHOLD) return 0;
   let seals = Math.floor(Math.log10(state.totalGoldEarned / THRESHOLD) * 3);
   seals = Math.max(seals, 1);
@@ -250,13 +253,13 @@ export function calculatePrestigeSeals(state: GameState): number {
   if (legacy.sealIncomeBonus > 0) seals = Math.floor(seals * (1 + legacy.sealIncomeBonus));
   if (state.unlockedSkillNodes.includes("lineage_3a")) seals = Math.floor(seals * 1.5);
   if (state.unlockedSkillNodes.includes("lineage_2a")) seals += 1;
-  if (state.unlockedSkillNodes.includes("military_4")) seals = Math.ceil(seals * 1.25);
+  if (state.unlockedSkillNodes.includes("military_4")) seals = Math.ceil(seals * 1.15);
   if (state.unlockedSkillNodes.includes("faith_4")) seals += 2;
   return Math.max(seals, 0);
 }
 
 export function canPrestige(state: GameState): boolean {
-  if (state.totalGoldEarned < 50_000_000) return false;
+  if (state.totalGoldEarned < 100_000_000_000) return false;
   const differentBuildingsOwned = Object.values(state.buildings).filter((b) => b.count >= 1).length;
   return differentBuildingsOwned >= 5;
 }
@@ -301,9 +304,9 @@ export function computeClickGoldReward(state: GameState, now: number = Date.now(
   if (state.purchasedUpgrades.includes("global_3")) {
     add += state.totalGPS * 0.01;
   }
-  // Siege Tactics — 2% of GPS per click
+  // Siege Tactics — 1% of GPS per click
   if (state.unlockedSkillNodes.includes("military_2b")) {
-    siege += state.totalGPS * 0.02;
+    siege += state.totalGPS * 0.01;
   }
   void now;
   return { add, flatSiegeBonus: siege };

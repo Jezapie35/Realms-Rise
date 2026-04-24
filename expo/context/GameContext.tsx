@@ -351,20 +351,21 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         }
 
         const fresh: GameState = {
-          ...prev,
-          gold: startGold,
-          totalGoldEarned: prev.totalGoldEarned,
-          prestigeCount: prev.prestigeCount + 1,
-          sealsAvailable: prev.sealsAvailable + reward,
-          sealsTotal: prev.sealsTotal + reward,
-          buildings,
-          purchasedUpgrades,
-          activeBonus: null,
-          carryOverUpgrade: null,
-          lastTimestamp: now,
-          runStartTime: now,
-          lastInterestTick: now,
-          lastRunGps: prev.totalGPS,
+        ...prev,
+        gold: startGold,
+        totalGoldEarned: startGold,  // was prev.totalGoldEarned
+        prestigeCount: prev.prestigeCount + 1,
+        sealsAvailable: prev.sealsAvailable + reward,
+        sealsTotal: prev.sealsTotal + reward,
+        buildings,
+        purchasedUpgrades,
+        activeBonus: null,
+        carryOverUpgrade: null,
+        lastTimestamp: now,
+        runStartTime: now,
+        lastInterestTick: now,
+        lastRunGps: prev.totalGPS,
+        triggeredMilestones: [],  // add this line
         };
         pushToast("Sovereignty Declared!", `+${reward} Royal Seal${reward === 1 ? "" : "s"}`, "success");
         return recalc(fresh, now);
@@ -440,6 +441,17 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
     pushToast("Kingdom wiped.", "A new tale begins.", "info");
   }, [pushToast]);
 
+  // Admin panel: direct state patch with recalc
+  const _patchState = useCallback(
+    (updater: (prev: GameState) => GameState) => {
+      setState((prev) => {
+        const next = updater(prev);
+        return recalc(next);
+      });
+    },
+    [recalc],
+  );
+
   const prestigeReward = useMemo(
     () => calculatePrestigeSeals(state),
     [state],
@@ -465,6 +477,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       pushToast,
       buyLegacyUpgrade,
       legacyUpgrades: LEGACY_UPGRADES,
+      _patchState,
     }),
     [
       state,
@@ -484,6 +497,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       prestigeReward,
       pushToast,
       buyLegacyUpgrade,
+      _patchState,
     ],
   );
 });

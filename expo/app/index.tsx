@@ -17,6 +17,7 @@ import AchievementsModal from "@/components/AchievementsModal";
 import SkillTreeSheet from "@/components/SkillTreeSheet";
 import MilestoneToast from "@/components/MilestoneToast";
 import IconPlaceholder from "@/components/IconPlaceholder";
+import AdminPanel from "@/components/AdminPanel";
 
 const BUY_MODES: ("1" | "10" | "max")[] = ["1", "10", "max"];
 
@@ -39,6 +40,7 @@ export default function MainScreen() {
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showSkillTree, setShowSkillTree] = useState<boolean>(false);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
+  const [showAdmin, setShowAdmin] = useState<boolean>(false);
 
   const eligible = canPrestige(state);
   const buildingTypesOwned = Object.values(state.buildings).filter((b) => b.count >= 1).length;
@@ -93,7 +95,7 @@ export default function MainScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.lockedTitle}>Declare Sovereignty</Text>
             <Text style={styles.lockedSub}>
-              Requires 50M gold · {formatGold(state.totalGoldEarned)} / 50M
+              Requires 100b gold · {formatGold(state.totalGoldEarned)} / 100b
             </Text>
             <Text style={styles.lockedSub}>
               Requires 5 building types · {buildingTypesOwned} / 5
@@ -129,6 +131,14 @@ export default function MainScreen() {
           testID="settings-btn"
         >
           <Settings color={COLORS.gold3} size={22} />
+        </Pressable>
+        <Pressable
+          onLongPress={() => setShowAdmin(true)}
+          delayLongPress={800}
+          style={styles.settingsBtn}
+          testID="admin-btn"
+        >
+          <Text style={{ fontSize: 18 }}>👑</Text>
         </Pressable>
       </View>
 
@@ -192,6 +202,7 @@ export default function MainScreen() {
       />
       <SkillTreeSheet visible={showSkillTree} onClose={() => setShowSkillTree(false)} />
       <AchievementsModal visible={showAchievements} onClose={() => setShowAchievements(false)} />
+      <AdminPanel visible={showAdmin} onClose={() => setShowAdmin(false)} />
       <MilestoneToast />
     </SafeAreaView>
   );

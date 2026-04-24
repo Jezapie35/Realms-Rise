@@ -203,11 +203,11 @@ const GLOBAL_UPGRADES: Upgrade[] = [
   { id: "global_3", buildingId: "_global", tier: 0, rarity: "rare", name: "Kingdom Charter", description: "Clicks add 1% of total GPS to earnings.", cost: 100_000, requires: { totalGold: 150_000 }, effects: [{ kind: "custom" }] },
   { id: "global_4", buildingId: "_global", tier: 0, rarity: "rare", name: "Golden Age", description: "All production ×1.5.", cost: 1_200_000, requires: { totalGold: 2_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
   { id: "global_5", buildingId: "_global", tier: 0, rarity: "epic", name: "Imperial Decree", description: "Each building owned adds +0.3% to all GPS.", cost: 15_000_000, requires: { totalGold: 30_000_000 }, effects: [{ kind: "building_count_bonus", value: 0.003 }] },
-  { id: "global_6", buildingId: "_global", tier: 0, rarity: "epic", name: "Manifest Destiny", description: "All production ×2. Click power ×3.", cost: 200_000_000, requires: { totalGold: 500_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 2 }, { kind: "click_mult", multiplier: 3 }] },
-  { id: "global_7", buildingId: "_global", tier: 0, rarity: "legendary", name: "Eternal Kingdom", description: "All production ×5. You are immortalised in legend.", cost: 2_000_000_000, requires: { totalGold: 10_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 5 }] },
-  { id: "global_8", buildingId: "_global", tier: 0, rarity: "legendary", name: "Age of Gold", description: "All production ×3.", cost: 250_000_000, requires: { totalGold: 2_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 3 }] },
-  { id: "global_9", buildingId: "_global", tier: 0, rarity: "legendary", name: "Continental Empire", description: "All production ×4. Click power ×4.", cost: 5_000_000_000, requires: { totalGold: 50_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 4 }, { kind: "click_mult", multiplier: 4 }] },
-  { id: "global_10", buildingId: "_global", tier: 0, rarity: "legendary", name: "World Sovereign", description: "All production ×10.", cost: 100_000_000_000, requires: { totalGold: 1_000_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 10 }] },
+  { id: "global_6", buildingId: "_global", tier: 0, rarity: "epic", name: "Manifest Destiny", description: "All production ×1.5. Click power ×2.", cost: 200_000_000, requires: { totalGold: 500_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }, { kind: "click_mult", multiplier: 2 }] },
+  { id: "global_7", buildingId: "_global", tier: 0, rarity: "legendary", name: "Eternal Kingdom", description: "All production ×1.5. You are immortalised in legend.", cost: 2_000_000_000, requires: { totalGold: 10_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
+  { id: "global_8", buildingId: "_global", tier: 0, rarity: "legendary", name: "Age of Gold", description: "All production ×1.5.", cost: 250_000_000, requires: { totalGold: 2_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
+  { id: "global_9", buildingId: "_global", tier: 0, rarity: "legendary", name: "Continental Empire", description: "All production ×1.5. Click power ×3.", cost: 5_000_000_000, requires: { totalGold: 50_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }, { kind: "click_mult", multiplier: 3 }] },
+  { id: "global_10", buildingId: "_global", tier: 0, rarity: "legendary", name: "World Sovereign", description: "All production ×1.5.", cost: 100_000_000_000, requires: { totalGold: 1_000_000_000_000 }, effects: [{ kind: "global_gps_mult", multiplier: 1.5 }] },
   ...((): Upgrade[] => {
     const names = [
       "Golden Epoch", "Celestial Charter", "Astral Mandate", "Starbound Realm", "Cosmic Dominion",
@@ -217,7 +217,7 @@ const GLOBAL_UPGRADES: Upgrade[] = [
     const out: Upgrade[] = [];
     let cost = 500_000_000_000;
     let gold = 10_000_000_000_000;
-    let mult = 6;
+    let mult = 1.5;
     for (let i = 0; i < names.length; i++) {
       out.push({
         id: `global_${11 + i}`,
@@ -232,7 +232,7 @@ const GLOBAL_UPGRADES: Upgrade[] = [
       });
       cost *= 25;
       gold *= 30;
-      mult = Math.floor(mult * 1.4);
+      mult = Math.floor(mult * 1.5);
     }
     return out;
   })(),
@@ -240,42 +240,42 @@ const GLOBAL_UPGRADES: Upgrade[] = [
 
 // Synergy upgrades at 100+ thresholds. Naming flavourful. Many of them.
 const SYNERGY_UPGRADES: Upgrade[] = [
-  { id: "syn_1", buildingId: "_synergy", tier: 0, rarity: "rare", name: "Merry Men", description: "Taverns and Barracks each ×2.", cost: 120_000_000, requires: { buildingCounts: { tavern: 15, barracks: 10 } }, effects: [{ kind: "synergy_mult", buildings: ["tavern", "barracks"], multiplier: 2 }] },
-  { id: "syn_2", buildingId: "_synergy", tier: 0, rarity: "rare", name: "Holy Warriors", description: "Cathedral ×2. Barracks ×3.", cost: 800_000_000, requires: { buildingCounts: { cathedral: 10, barracks: 25 } }, effects: [{ kind: "synergy_mult", buildings: ["cathedral"], multiplier: 2 }, { kind: "synergy_mult", buildings: ["barracks"], multiplier: 3 }] },
-  { id: "syn_3", buildingId: "_synergy", tier: 0, rarity: "uncommon", name: "Grain Trade", description: "Mills and Market Stalls each ×2.", cost: 12_000_000, requires: { buildingCounts: { mill: 10, market_stall: 15 } }, effects: [{ kind: "synergy_mult", buildings: ["mill", "market_stall"], multiplier: 2 }] },
-  { id: "syn_4", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Industrial Complex", description: "Blacksmiths and Mills each ×4.", cost: 45_000_000, requires: { buildingCounts: { blacksmith: 25, mill: 20 } }, effects: [{ kind: "synergy_mult", buildings: ["blacksmith", "mill"], multiplier: 4 }] },
-  { id: "syn_5", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Royal Compound", description: "Palace ×3. Royal Treasury ×3.", cost: 100_000_000_000, requires: { buildingCounts: { palace: 1, royal_treasury: 20 } }, effects: [{ kind: "synergy_mult", buildings: ["palace", "royal_treasury"], multiplier: 3 }] },
-  { id: "syn_6", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Castle Economy", description: "Castle Tower and Barracks each ×5.", cost: 2_700_000_000, requires: { buildingCounts: { castle_tower: 40, barracks: 50 } }, effects: [{ kind: "synergy_mult", buildings: ["castle_tower", "barracks"], multiplier: 5 }] },
+  { id: "syn_1", buildingId: "_synergy", tier: 0, rarity: "rare", name: "Merry Men", description: "Taverns and Barracks each ×1.5.", cost: 120_000_000, requires: { buildingCounts: { tavern: 15, barracks: 10 } }, effects: [{ kind: "synergy_mult", buildings: ["tavern", "barracks"], multiplier: 1.5 }] },
+  { id: "syn_2", buildingId: "_synergy", tier: 0, rarity: "rare", name: "Holy Warriors", description: "Cathedral and Barracks each ×1.5.", cost: 800_000_000, requires: { buildingCounts: { cathedral: 10, barracks: 25 } }, effects: [{ kind: "synergy_mult", buildings: ["cathedral"], multiplier: 1.5 }, { kind: "synergy_mult", buildings: ["barracks"], multiplier: 1.5 }] },
+  { id: "syn_3", buildingId: "_synergy", tier: 0, rarity: "uncommon", name: "Grain Trade", description: "Mills and Market Stalls each ×1.5.", cost: 12_000_000, requires: { buildingCounts: { mill: 10, market_stall: 15 } }, effects: [{ kind: "synergy_mult", buildings: ["mill", "market_stall"], multiplier: 1.5 }] },
+  { id: "syn_4", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Industrial Complex", description: "Blacksmiths and Mills each ×2.", cost: 45_000_000, requires: { buildingCounts: { blacksmith: 25, mill: 20 } }, effects: [{ kind: "synergy_mult", buildings: ["blacksmith", "mill"], multiplier: 2 }] },
+  { id: "syn_5", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Royal Compound", description: "Palace and Royal Treasury each x2.", cost: 100_000_000_000, requires: { buildingCounts: { palace: 1, royal_treasury: 20 } }, effects: [{ kind: "synergy_mult", buildings: ["palace", "royal_treasury"], multiplier: 2 }] },
+  { id: "syn_6", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Castle Economy", description: "Castle Tower and Barracks each ×2.", cost: 2_700_000_000, requires: { buildingCounts: { castle_tower: 40, barracks: 50 } }, effects: [{ kind: "synergy_mult", buildings: ["castle_tower", "barracks"], multiplier: 2 }] },
 
   // 100+ milestone synergies — lots of them, balanced
   { id: "syn_100_hut", buildingId: "_synergy", tier: 0, rarity: "rare", name: "Village Kingdom", description: "Peasant Huts ×3 and all production +5%.", cost: 2_000_000, requires: { buildingCounts: { peasant_hut: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["peasant_hut"], multiplier: 3 }, { kind: "global_gps_mult", multiplier: 1.05 }] },
   { id: "syn_100_mkt", buildingId: "_synergy", tier: 0, rarity: "rare", name: "Market Dominance", description: "Market Stalls ×3. Mills ×2.", cost: 8_000_000, requires: { buildingCounts: { market_stall: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["market_stall"], multiplier: 3 }, { kind: "synergy_mult", buildings: ["mill"], multiplier: 2 }] },
   { id: "syn_100_blk", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Forge Supremacy", description: "Blacksmiths ×4. Barracks ×2.", cost: 30_000_000, requires: { buildingCounts: { blacksmith: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["blacksmith"], multiplier: 4 }, { kind: "synergy_mult", buildings: ["barracks"], multiplier: 2 }] },
   { id: "syn_100_tav", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Ale-Soaked Realm", description: "Taverns ×4. Click power ×2.", cost: 80_000_000, requires: { buildingCounts: { tavern: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["tavern"], multiplier: 4 }, { kind: "click_mult", multiplier: 2 }] },
-  { id: "syn_100_mill", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Breadbasket Kingdom", description: "Mills ×5. Peasant Huts ×2.", cost: 200_000_000, requires: { buildingCounts: { mill: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["mill"], multiplier: 5 }, { kind: "synergy_mult", buildings: ["peasant_hut"], multiplier: 2 }] },
-  { id: "syn_100_brk", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Standing Army", description: "Barracks ×5. Click power ×3.", cost: 500_000_000, requires: { buildingCounts: { barracks: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["barracks"], multiplier: 5 }, { kind: "click_mult", multiplier: 3 }] },
-  { id: "syn_100_cath", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Divine Mandate", description: "Cathedrals ×5. All production ×1.25.", cost: 1_500_000_000, requires: { buildingCounts: { cathedral: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["cathedral"], multiplier: 5 }, { kind: "global_gps_mult", multiplier: 1.25 }] },
-  { id: "syn_100_tower", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Fortress Nation", description: "Castle Towers ×5. Barracks ×3.", cost: 4_000_000_000, requires: { buildingCounts: { castle_tower: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["castle_tower"], multiplier: 5 }, { kind: "synergy_mult", buildings: ["barracks"], multiplier: 3 }] },
-  { id: "syn_100_treas", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Bullion Standard", description: "Treasuries ×6. Market Stalls ×2.", cost: 10_000_000_000, requires: { buildingCounts: { royal_treasury: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["royal_treasury"], multiplier: 6 }, { kind: "synergy_mult", buildings: ["market_stall"], multiplier: 2 }] },
-  { id: "syn_100_pal", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Imperial Court", description: "Palaces ×8. All production ×1.5.", cost: 30_000_000_000, requires: { buildingCounts: { palace: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["palace"], multiplier: 8 }, { kind: "global_gps_mult", multiplier: 1.5 }] },
+  { id: "syn_100_mill", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Breadbasket Kingdom", description: "Mills ×3. Peasant Huts ×2.", cost: 200_000_000, requires: { buildingCounts: { mill: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["mill"], multiplier: 3 }, { kind: "synergy_mult", buildings: ["peasant_hut"], multiplier: 2 }] },
+  { id: "syn_100_brk", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Standing Army", description: "Barracks ×3. Click power ×3.", cost: 500_000_000, requires: { buildingCounts: { barracks: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["barracks"], multiplier: 3 }, { kind: "click_mult", multiplier: 3 }] },
+  { id: "syn_100_cath", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Divine Mandate", description: "Cathedrals ×2. All production ×1.1.", cost: 1_500_000_000, requires: { buildingCounts: { cathedral: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["cathedral"], multiplier: 2 }, { kind: "global_gps_mult", multiplier: 1.1 }] },
+  { id: "syn_100_tower", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Fortress Nation", description: "Castle Towers ×2. Barracks ×2.", cost: 4_000_000_000, requires: { buildingCounts: { castle_tower: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["castle_tower"], multiplier: 2 }, { kind: "synergy_mult", buildings: ["barracks"], multiplier: 2 }] },
+  { id: "syn_100_treas", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Bullion Standard", description: "Treasuries ×3. Market Stalls ×2.", cost: 10_000_000_000, requires: { buildingCounts: { royal_treasury: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["royal_treasury"], multiplier: 3 }, { kind: "synergy_mult", buildings: ["market_stall"], multiplier: 2 }] },
+  { id: "syn_100_pal", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Imperial Court", description: "Palaces ×3. All production ×1.1.", cost: 30_000_000_000, requires: { buildingCounts: { palace: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["palace"], multiplier: 3 }, { kind: "global_gps_mult", multiplier: 1.1 }] },
 
   // Cross-building 100 milestones
   { id: "syn_x_1", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Feudal Bond", description: "Peasant Huts and Market Stalls each ×3.", cost: 15_000_000, requires: { buildingCounts: { peasant_hut: 100, market_stall: 50 } }, effects: [{ kind: "synergy_mult", buildings: ["peasant_hut", "market_stall"], multiplier: 3 }] },
   { id: "syn_x_2", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Arms and Ale", description: "Taverns and Barracks each ×3.", cost: 120_000_000, requires: { buildingCounts: { tavern: 100, barracks: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["tavern", "barracks"], multiplier: 3 }] },
   { id: "syn_x_3", buildingId: "_synergy", tier: 0, rarity: "epic", name: "Forge & Flour", description: "Blacksmiths and Mills each ×3.", cost: 300_000_000, requires: { buildingCounts: { blacksmith: 100, mill: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["blacksmith", "mill"], multiplier: 3 }] },
-  { id: "syn_x_4", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Faith and Iron", description: "Cathedrals and Barracks each ×4.", cost: 1_000_000_000, requires: { buildingCounts: { cathedral: 100, barracks: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["cathedral", "barracks"], multiplier: 4 }] },
-  { id: "syn_x_5", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Crown and Coin", description: "Palace and Royal Treasury each ×5.", cost: 25_000_000_000, requires: { buildingCounts: { palace: 50, royal_treasury: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["palace", "royal_treasury"], multiplier: 5 }] },
-  { id: "syn_x_6", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Keep of Kings", description: "Castle Towers and Palaces each ×4.", cost: 40_000_000_000, requires: { buildingCounts: { castle_tower: 100, palace: 50 } }, effects: [{ kind: "synergy_mult", buildings: ["castle_tower", "palace"], multiplier: 4 }] },
+  { id: "syn_x_4", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Faith and Iron", description: "Cathedrals and Barracks each ×3.", cost: 1_000_000_000, requires: { buildingCounts: { cathedral: 100, barracks: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["cathedral", "barracks"], multiplier: 3 }] },
+  { id: "syn_x_5", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Crown and Coin", description: "Palace and Royal Treasury each ×3.", cost: 25_000_000_000, requires: { buildingCounts: { palace: 50, royal_treasury: 100 } }, effects: [{ kind: "synergy_mult", buildings: ["palace", "royal_treasury"], multiplier: 3 }] },
+  { id: "syn_x_6", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Keep of Kings", description: "Castle Towers and Palaces each ×3.", cost: 40_000_000_000, requires: { buildingCounts: { castle_tower: 100, palace: 50 } }, effects: [{ kind: "synergy_mult", buildings: ["castle_tower", "palace"], multiplier: 3 }] },
 
   // 200+ milestone synergies (late game)
   { id: "syn_200_hut", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Nation of Peasants", description: "Peasant Huts ×6.", cost: 500_000_000, requires: { buildingCounts: { peasant_hut: 200 } }, effects: [{ kind: "synergy_mult", buildings: ["peasant_hut"], multiplier: 6 }] },
   { id: "syn_200_brk", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Warrior Society", description: "Barracks ×8. Castle Towers ×2.", cost: 20_000_000_000, requires: { buildingCounts: { barracks: 200 } }, effects: [{ kind: "synergy_mult", buildings: ["barracks"], multiplier: 8 }, { kind: "synergy_mult", buildings: ["castle_tower"], multiplier: 2 }] },
-  { id: "syn_200_cath", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Theocracy", description: "Cathedrals ×10. All production ×1.5.", cost: 200_000_000_000, requires: { buildingCounts: { cathedral: 200 } }, effects: [{ kind: "synergy_mult", buildings: ["cathedral"], multiplier: 10 }, { kind: "global_gps_mult", multiplier: 1.5 }] },
-  { id: "syn_200_treas", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Gold Standard", description: "Treasuries ×12.", cost: 1_000_000_000_000, requires: { buildingCounts: { royal_treasury: 200 } }, effects: [{ kind: "synergy_mult", buildings: ["royal_treasury"], multiplier: 12 }] },
+  { id: "syn_200_cath", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Theocracy", description: "Cathedrals ×10. All production ×1.2.", cost: 200_000_000_000, requires: { buildingCounts: { cathedral: 200 } }, effects: [{ kind: "synergy_mult", buildings: ["cathedral"], multiplier: 10 }, { kind: "global_gps_mult", multiplier: 1.2 }] },
+  { id: "syn_200_treas", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Gold Standard", description: "Treasuries ×8.", cost: 1_000_000_000_000, requires: { buildingCounts: { royal_treasury: 200 } }, effects: [{ kind: "synergy_mult", buildings: ["royal_treasury"], multiplier: 8 }] },
 
   // Grand synergy — all buildings 100
-  { id: "syn_grand_100", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "United Realm", description: "All production ×3. Click power ×5.", cost: 50_000_000_000, requires: { buildingCounts: { peasant_hut: 100, market_stall: 100, blacksmith: 100, tavern: 100, mill: 100, barracks: 100, cathedral: 100, castle_tower: 100, royal_treasury: 100, palace: 50 } }, effects: [{ kind: "global_gps_mult", multiplier: 3 }, { kind: "click_mult", multiplier: 5 }] },
-  { id: "syn_grand_200", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Empire Eternal", description: "All production ×5. Click power ×10.", cost: 2_000_000_000_000, requires: { buildingCounts: { peasant_hut: 200, market_stall: 200, blacksmith: 200, tavern: 200, mill: 200, barracks: 200, cathedral: 200, castle_tower: 200, royal_treasury: 200, palace: 100 } }, effects: [{ kind: "global_gps_mult", multiplier: 5 }, { kind: "click_mult", multiplier: 10 }] },
+  { id: "syn_grand_100", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "United Realm", description: "All production ×1.2. Click power ×3.", cost: 50_000_000_000, requires: { buildingCounts: { peasant_hut: 100, market_stall: 100, blacksmith: 100, tavern: 100, mill: 100, barracks: 100, cathedral: 100, castle_tower: 100, royal_treasury: 100, palace: 50 } }, effects: [{ kind: "global_gps_mult", multiplier: 1.2 }, { kind: "click_mult", multiplier: 3 }] },
+  { id: "syn_grand_200", buildingId: "_synergy", tier: 0, rarity: "legendary", name: "Empire Eternal", description: "All production ×1.2. Click power ×5.", cost: 2_000_000_000_000, requires: { buildingCounts: { peasant_hut: 200, market_stall: 200, blacksmith: 200, tavern: 200, mill: 200, barracks: 200, cathedral: 200, castle_tower: 200, royal_treasury: 200, palace: 100 } }, effects: [{ kind: "global_gps_mult", multiplier: 1.2 }, { kind: "click_mult", multiplier: 5 }] },
 
   // Grand synergies every 100 thresholds up to 1000.
   ...((): Upgrade[] => {
@@ -285,8 +285,8 @@ const SYNERGY_UPGRADES: Upgrade[] = [
       "Divine Hegemony", "Starlit Realm", "Worldforge", "Eternity's Reign",
     ];
     let cost = 50_000_000_000_000;
-    let gpsMult = 7;
-    let clickMult = 15;
+    let gpsMult = 2;
+    let clickMult = 3;
     for (let i = 0; i < names.length; i++) {
       const threshold = 300 + i * 100; // 300, 400, ..., 1000
       const palaceT = Math.floor(threshold / 2);
@@ -359,11 +359,11 @@ const SYNERGY_UPGRADES: Upgrade[] = [
 
 const CLICK_UPGRADES: Upgrade[] = [
   { id: "click_1", buildingId: "_click", tier: 0, rarity: "rare", name: "Better Grip", description: "Click power ×2.", cost: 2_000, requires: { totalClicks: 200 }, effects: [{ kind: "click_mult", multiplier: 2 }] },
-  { id: "click_2", buildingId: "_click", tier: 0, rarity: "rare", name: "Royal Touch", description: "Click power equals 1% of total GPS (if higher).", cost: 100_000, requires: { totalClicks: 2_000 }, effects: [{ kind: "custom" }] },
-  { id: "click_3", buildingId: "_click", tier: 0, rarity: "epic", name: "Midas Touch", description: "Click power ×5.", cost: 8_000_000, requires: { totalClicks: 20_000 }, effects: [{ kind: "click_mult", multiplier: 5 }] },
-  { id: "click_4", buildingId: "_click", tier: 0, rarity: "legendary", name: "The Golden Fist", description: "Click power ×10. Chance to spawn Golden Coins.", cost: 500_000_000, requires: { totalClicks: 150_000 }, effects: [{ kind: "click_mult", multiplier: 10 }] },
-  { id: "click_5", buildingId: "_click", tier: 0, rarity: "legendary", name: "Hand of Kings", description: "Click power ×15.", cost: 250_000_000, requires: { totalClicks: 500_000 }, effects: [{ kind: "click_mult", multiplier: 15 }] },
-  { id: "click_6", buildingId: "_click", tier: 0, rarity: "legendary", name: "Fingers of Fate", description: "Click power ×25.", cost: 10_000_000_000, requires: { totalClicks: 2_000_000 }, effects: [{ kind: "click_mult", multiplier: 25 }] },
+  { id: "click_2", buildingId: "_click", tier: 0, rarity: "rare", name: "Royal Touch", description: "Click power equals 1% of total GPS (if higher).", cost: 100_000, requires: { totalClicks: 1_000 }, effects: [{ kind: "custom" }] },
+  { id: "click_3", buildingId: "_click", tier: 0, rarity: "epic", name: "Midas Touch", description: "Click power ×5.", cost: 100_000_000, requires: { totalClicks: 5_000 }, effects: [{ kind: "click_mult", multiplier: 5 }] },
+  { id: "click_4", buildingId: "_click", tier: 0, rarity: "legendary", name: "The Golden Fist", description: "Click power ×10. Chance to spawn Golden Coins.", cost: 1_000_000_000, requires: { totalClicks: 10_000 }, effects: [{ kind: "click_mult", multiplier: 10 }] },
+  { id: "click_5", buildingId: "_click", tier: 0, rarity: "legendary", name: "Hand of Kings", description: "Click power ×15.", cost: 100_000_000_000, requires: { totalClicks: 25_000 }, effects: [{ kind: "click_mult", multiplier: 15 }] },
+  { id: "click_6", buildingId: "_click", tier: 0, rarity: "legendary", name: "Fingers of Fate", description: "Click power ×25.", cost: 10_000_000_000_000, requires: { totalClicks: 50_000 }, effects: [{ kind: "click_mult", multiplier: 25 }] },
   ...((): Upgrade[] => {
     const names = [
       "Sovereign Touch", "Crown of Fingers", "Touch of Heavens", "The Infinite Click",

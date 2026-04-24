@@ -32,6 +32,6 @@ export const MILESTONES: Milestone[] = [
   },
   { id: "warlord", title: "Warlord", desc: "Unlocked the Warlord skill.", check: (s) => s.unlockedSkillNodes.includes("military_4") },
   { id: "pinnacle", title: "Immortal Crown", desc: "You have conquered everything.", check: (s) => s.unlockedSkillNodes.includes("pinnacle") },
-  { id: "click_100k", title: "Devoted Ruler", desc: "100,000 taps. Impressive dedication.", check: (s) => s.totalClicks >= 100000 },
+  { id: "click_100k", title: "Devoted Ruler", desc: "50,000 taps. Impressive dedication.", check: (s) => s.totalClicks >= 50000 },
   { id: "syn_royal", title: "Royal Compound", desc: "Palace and Treasury working as one.", check: (s) => s.purchasedUpgrades.includes("syn_5") },
 ];
