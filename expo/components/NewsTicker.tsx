@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   text: {
-    color: COLORS.gold4,
+    color: COLORS.gold3,
     fontFamily: FONTS.serif,
     fontStyle: "italic",
     fontSize: 12,
