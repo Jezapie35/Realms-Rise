@@ -367,7 +367,6 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         lastRunGps: prev.totalGPS,
         triggeredMilestones: [],  // add this line
         };
-        };
         pushToast("Sovereignty Declared!", `+${reward} Royal Seal${reward === 1 ? "" : "s"}`, "success");
         return recalc(fresh, now);
       });
