@@ -20,7 +20,7 @@ export default function NewsTicker() {
       }),
     );
     loop.start();
-    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), 30000);
+    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), 12000);
     return () => {
       loop.stop();
       clearInterval(iv);
