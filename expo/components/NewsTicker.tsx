@@ -9,51 +9,20 @@ export default function NewsTicker() {
   const [idx, setIdx] = useState<number>(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const translate = useRef(new Animated.Value(0)).current;
   const loopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const ivRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    if (width === 0 || textWidth === 0) return;
+  const startAnimation = (containerWidth: number, msgWidth: number) => {
+    loopRef.current?.stop();
+    if (ivRef.current) clearInterval(ivRef.current);
 
-    const totalDistance = width + textWidth;
-    const speed = 80; // pixels per second
-    const duration = (totalDistance / speed) * 1000;
-
-    const startLoop = () => {
-      translate.setValue(width);
-      const loop = Animated.loop(
-        Animated.timing(translate, {
-          toValue: -textWidth,
-          duration,
-          useNativeDriver: true,
-          easing: Easing.linear,
-        }),
-      );
-      loopRef.current = loop;
-      loop.start();
-    };
-
-    startLoop();
-
-    const iv = setInterval(() => {
-      loopRef.current?.stop();
-      setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
-    }, duration);
-
-    return () => {
-      loopRef.current?.stop();
-      clearInterval(iv);
-    };
-  }, [width, textWidth]);
-
-  useEffect(() => {
-    if (width === 0 || textWidth === 0) return;
-    const totalDistance = width + textWidth;
+    const totalDistance = containerWidth + msgWidth;
     const speed = 80;
     const duration = (totalDistance / speed) * 1000;
 
-    translate.setValue(width);
+    translate.setValue(containerWidth);
     const loop = Animated.loop(
       Animated.timing(translate, {
-        toValue: -textWidth,
+        toValue: -msgWidth,
         duration,
         useNativeDriver: true,
         easing: Easing.linear,
@@ -61,12 +30,30 @@ export default function NewsTicker() {
     );
     loopRef.current = loop;
     loop.start();
-  }, [idx]);
+
+    ivRef.current = setInterval(() => {
+      setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
+    }, duration);
+  };
+
+  // Only fires when textWidth changes (i.e. after new message is measured)
+  useEffect(() => {
+    if (width === 0 || textWidth === 0) return;
+    startAnimation(width, textWidth);
+  }, [textWidth, width]);
+
+  useEffect(() => {
+    return () => {
+      loopRef.current?.stop();
+      if (ivRef.current) clearInterval(ivRef.current);
+    };
+  }, []);
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
+      {/* Invisible text to measure width before animating */}
       <Text
         numberOfLines={1}
         style={[styles.text, { position: "absolute", opacity: 0 }]}
