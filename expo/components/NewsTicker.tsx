@@ -6,56 +6,64 @@ import { NEWS_MESSAGES } from "@/data/news";
 export default function NewsTicker() {
   const [width, setWidth] = useState(0);
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
-  const [textWidth, setTextWidth] = useState(0);
   const nextTextWidthRef = useRef(0);
   const translate = useRef(new Animated.Value(0)).current;
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const widthRef = useRef(0);
+  const idxRef = useRef(idx);
 
   const nextIdx = (idx + 1) % NEWS_MESSAGES.length;
 
-  useEffect(() => {
-    if (width === 0 || textWidth === 0) return;
-
+  const startAnimation = (containerWidth: number, msgWidth: number, currentIdx: number) => {
     animRef.current?.stop();
-    if (timerRef.current) clearTimeout(timerRef.current);
-    translate.setValue(width);
+    translate.setValue(containerWidth);
 
-    const duration = ((width + textWidth) / 100) * 1000;
+    const duration = ((containerWidth + msgWidth) / 100) * 1000;
 
     const anim = Animated.timing(translate, {
-      toValue: -textWidth,
+      toValue: -msgWidth,
       duration,
       easing: Easing.linear,
       useNativeDriver: true,
     });
 
     animRef.current = anim;
-    anim.start();
 
-    timerRef.current = setTimeout(() => {
-      const nextWidth = nextTextWidthRef.current;
-      setIdx(nextIdx);
-      if (nextWidth > 0) setTextWidth(nextWidth);
-    }, duration - 500);
+    anim.start(({ finished }) => {
+      if (finished) {
+        setTimeout(() => {
+          const next = (currentIdx + 1) % NEWS_MESSAGES.length;
+          idxRef.current = next;
+          setIdx(next);
+          // start next animation immediately using pre-measured width
+          startAnimation(widthRef.current, nextTextWidthRef.current, next);
+        }, 1000);
+      }
+    });
+  };
 
-    return () => {
-      anim.stop();
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [width, textWidth]);
-
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+  const onLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    widthRef.current = w;
+    setWidth(w);
+  };
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
+      {/* Measure current */}
       <Text
         key={idx}
         style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
-        onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
+        onLayout={(e) => {
+          const measured = e.nativeEvent.layout.width;
+          if (widthRef.current > 0 && measured > 0) {
+            startAnimation(widthRef.current, measured, idxRef.current);
+          }
+        }}
       >
         {NEWS_MESSAGES[idx]}
       </Text>
+      {/* Pre-measure next */}
       <Text
         key={`next-${nextIdx}`}
         style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
