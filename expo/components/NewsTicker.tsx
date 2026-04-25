@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, LayoutChangeEvent, StyleSheet, View, Text } from "react-native";
 import { COLORS, FONTS } from "@/constants/colors";
 import { NEWS_MESSAGES } from "@/data/news";
@@ -11,55 +11,46 @@ export default function NewsTicker() {
   const widthRef = useRef<number>(0);
   const idxRef = useRef<number>(idx);
 
-  useEffect(() => { widthRef.current = width; }, [width]);
-  useEffect(() => { idxRef.current = idx; }, [idx]);
-
-  const startAnimation = useCallback((containerWidth: number, msgWidth: number) => {
+  const startAnimation = (containerWidth: number, msgWidth: number) => {
+    if (containerWidth === 0 || msgWidth === 0) return;
     animRef.current?.stop();
-    const totalDistance = containerWidth + msgWidth;
-    const speed = 100;
-    const duration = (totalDistance / speed) * 1000;
 
-    translate.setValue(containerWidth + 20);
-    const anim = Animated.timing(translate, {
+    const totalDistance = containerWidth + msgWidth;
+    const duration = (totalDistance / 100) * 1000;
+
+    translate.setValue(containerWidth);
+    animRef.current = Animated.timing(translate, {
       toValue: -msgWidth,
       duration,
       useNativeDriver: true,
       easing: Easing.linear,
     });
-    animRef.current = anim;
-    anim.start(({ finished }) => {
+
+    animRef.current.start(({ finished }) => {
       if (finished) {
         idxRef.current = (idxRef.current + 1) % NEWS_MESSAGES.length;
         setIdx(idxRef.current);
       }
     });
-  }, [translate]);
-
-  const onTextLayout = useCallback((e: LayoutChangeEvent) => {
-    const measured = e.nativeEvent.layout.width;
-    if (widthRef.current > 0 && measured > 0) {
-      startAnimation(widthRef.current, measured);
-    }
-  }, [startAnimation]);
+  };
 
   useEffect(() => {
-    return () => { animRef.current?.stop(); };
-  }, []);
+    if (width > 0) {
+      widthRef.current = width;
+    }
+  }, [width]);
 
   const onLayout = (e: LayoutChangeEvent) => {
-    const w = e.nativeEvent.layout.width;
-    widthRef.current = w;
-    setWidth(w);
+    setWidth(e.nativeEvent.layout.width);
+    widthRef.current = e.nativeEvent.layout.width;
   };
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
       <Text
-        key={idx}
-        numberOfLines={1}
+        key={`measure-${idx}`}
         style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
-        onLayout={onTextLayout}
+        onLayout={(e) => startAnimation(widthRef.current, e.nativeEvent.layout.width)}
       >
         {NEWS_MESSAGES[idx]}
       </Text>
