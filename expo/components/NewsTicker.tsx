@@ -15,7 +15,7 @@ export default function NewsTicker() {
       translate.setValue(width);
       Animated.timing(translate, {
         toValue: -width * 3,
-        duration: 8000,
+        duration: 15000,
         easing: Easing.linear,
         useNativeDriver: true,
       }).start(({ finished }) => {
@@ -24,7 +24,7 @@ export default function NewsTicker() {
             const next = (i + 1) % NEWS_MESSAGES.length;
             setIdx(next);
             run(next);
-          }, 1000);
+          }, 500);
         }
       });
     };
