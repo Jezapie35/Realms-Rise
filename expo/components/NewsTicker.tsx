@@ -5,11 +5,14 @@ import { NEWS_MESSAGES } from "@/data/news";
 
 export default function NewsTicker() {
   const [width, setWidth] = useState<number>(0);
-  const [textWidth, setTextWidth] = useState<number>(0);
   const [idx, setIdx] = useState<number>(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const translate = useRef(new Animated.Value(0)).current;
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
   const widthRef = useRef<number>(0);
+  const idxRef = useRef<number>(idx);
+
+  useEffect(() => { widthRef.current = width; }, [width]);
+  useEffect(() => { idxRef.current = idx; }, [idx]);
 
   const startAnimation = useCallback((containerWidth: number, msgWidth: number) => {
     animRef.current?.stop();
@@ -27,36 +30,33 @@ export default function NewsTicker() {
     animRef.current = anim;
     anim.start(({ finished }) => {
       if (finished) {
-        setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
+        idxRef.current = (idxRef.current + 1) % NEWS_MESSAGES.length;
+        setIdx(idxRef.current);
       }
     });
   }, [translate]);
 
-  useEffect(() => { widthRef.current = width; }, [width]);
-
   const onTextLayout = useCallback((e: LayoutChangeEvent) => {
     const measured = e.nativeEvent.layout.width;
-    setTextWidth(measured);
-    if (widthRef.current > 0) {
+    if (widthRef.current > 0 && measured > 0) {
       startAnimation(widthRef.current, measured);
     }
   }, [startAnimation]);
 
   useEffect(() => {
-    if (width > 0 && textWidth > 0) {
-      startAnimation(width, textWidth);
-    }
-  }, [width]);
-
-  useEffect(() => {
     return () => { animRef.current?.stop(); };
   }, []);
 
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+  const onLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    widthRef.current = w;
+    setWidth(w);
+  };
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
       <Text
+        key={idx}
         numberOfLines={1}
         style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
         onLayout={onTextLayout}
