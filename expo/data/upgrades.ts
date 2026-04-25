@@ -217,7 +217,7 @@ const GLOBAL_UPGRADES: Upgrade[] = [
     const out: Upgrade[] = [];
     let cost = 500_000_000_000;
     let gold = 10_000_000_000_000;
-    let mult = 1.4;
+    let mult = 1.5;
     for (let i = 0; i < names.length; i++) {
       out.push({
         id: `global_${11 + i}`,
@@ -230,8 +230,8 @@ const GLOBAL_UPGRADES: Upgrade[] = [
         requires: { totalGold: gold },
         effects: [{ kind: "global_gps_mult", multiplier: mult }],
       });
-      cost *= 25;
-      gold *= 30;
+      cost *= 35;
+      gold *= 50;
       mult = Math.floor(mult * 1.5);
     }
     return out;
