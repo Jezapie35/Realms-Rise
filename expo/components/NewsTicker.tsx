@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Easing, LayoutChangeEvent, StyleSheet, View, Text } from "react-native";
 import { COLORS, FONTS } from "@/constants/colors";
 import { NEWS_MESSAGES } from "@/data/news";
@@ -9,10 +9,11 @@ export default function NewsTicker() {
   const [idx, setIdx] = useState<number>(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const translate = useRef(new Animated.Value(0)).current;
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
+  const widthRef = useRef<number>(0);
+  const textWidthRef = useRef<number>(0);
 
-  const startAnimation = (containerWidth: number, msgWidth: number) => {
+  const startAnimation = useCallback((containerWidth: number, msgWidth: number) => {
     animRef.current?.stop();
-
     const totalDistance = containerWidth + msgWidth;
     const speed = 80;
     const duration = (totalDistance / speed) * 1000;
@@ -30,17 +31,29 @@ export default function NewsTicker() {
         setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
       }
     });
-  };
+  }, [translate]);
+
+  // Store latest values in refs so callbacks always have fresh values
+  useEffect(() => { widthRef.current = width; }, [width]);
+  useEffect(() => { textWidthRef.current = textWidth; }, [textWidth]);
+
+  // Restart animation whenever idx changes (after new text is measured)
+  const onTextLayout = useCallback((e: LayoutChangeEvent) => {
+    const measured = e.nativeEvent.layout.width;
+    setTextWidth(measured);
+    if (widthRef.current > 0) {
+      startAnimation(widthRef.current, measured);
+    }
+  }, [startAnimation]);
 
   useEffect(() => {
-    if (width === 0 || textWidth === 0) return;
-    startAnimation(width, textWidth);
-  }, [textWidth, width]);
+    if (width > 0 && textWidth > 0) {
+      startAnimation(width, textWidth);
+    }
+  }, [width]);
 
   useEffect(() => {
-    return () => {
-      animRef.current?.stop();
-    };
+    return () => { animRef.current?.stop(); };
   }, []);
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
@@ -50,7 +63,7 @@ export default function NewsTicker() {
       <Text
         numberOfLines={1}
         style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
-        onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
+        onLayout={onTextLayout}
       >
         {NEWS_MESSAGES[idx]}
       </Text>
