@@ -52,6 +52,6 @@ const styles = StyleSheet.create({
     color: COLORS.gold3,
     fontFamily: FONTS.serif,
     fontStyle: "italic",
-    fontSize: 12,
+    fontSize: 14,
   },
 });
