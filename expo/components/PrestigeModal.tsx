@@ -33,7 +33,7 @@ export default function PrestigeModal({ visible, onConfirm, onCancel }: Props) {
           <View style={styles.sealWrap}>
             <IconPlaceholder size={96} tint={COLORS.red} borderRadius={48} />
           </View>
-          <Text style={styles.title}>Declare Sovereignty</Text>
+           <Text style={styles.title}>Declare Sovereignty</Text>
           <Text style={styles.subtitle}>Your kingdom falls. Your legacy endures forever.</Text>
 
           <View style={styles.sealsBox}>
