@@ -8,32 +8,28 @@ export default function NewsTicker() {
   const [textWidth, setTextWidth] = useState<number>(0);
   const [idx, setIdx] = useState<number>(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const translate = useRef(new Animated.Value(0)).current;
-  const loopRef = useRef<Animated.CompositeAnimation | null>(null);
-  const ivRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const startAnimation = (containerWidth: number, msgWidth: number) => {
-    loopRef.current?.stop();
-    if (ivRef.current) clearInterval(ivRef.current);
+    animRef.current?.stop();
 
     const totalDistance = containerWidth + msgWidth;
     const speed = 80;
     const duration = (totalDistance / speed) * 1000;
 
     translate.setValue(containerWidth);
-    const loop = Animated.loop(
-      Animated.timing(translate, {
-        toValue: -msgWidth,
-        duration,
-        useNativeDriver: true,
-        easing: Easing.linear,
-      }),
-    );
-    loopRef.current = loop;
-    loop.start();
-
-    ivRef.current = setInterval(() => {
-      setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
-    }, duration);
+    const anim = Animated.timing(translate, {
+      toValue: -msgWidth,
+      duration,
+      useNativeDriver: true,
+      easing: Easing.linear,
+    });
+    animRef.current = anim;
+    anim.start(({ finished }) => {
+      if (finished) {
+        setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
+      }
+    });
   };
 
   useEffect(() => {
@@ -43,8 +39,7 @@ export default function NewsTicker() {
 
   useEffect(() => {
     return () => {
-      loopRef.current?.stop();
-      if (ivRef.current) clearInterval(ivRef.current);
+      animRef.current?.stop();
     };
   }, []);
 
