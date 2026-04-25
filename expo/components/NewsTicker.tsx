@@ -36,7 +36,6 @@ export default function NewsTicker() {
     }, duration);
   };
 
-  // Only fires when textWidth changes (i.e. after new message is measured)
   useEffect(() => {
     if (width === 0 || textWidth === 0) return;
     startAnimation(width, textWidth);
@@ -53,18 +52,16 @@ export default function NewsTicker() {
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      {/* Invisible text to measure width before animating */}
       <Text
         numberOfLines={1}
-        style={[styles.text, { position: "absolute", opacity: 0 }]}
+        style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
         onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
       >
         {NEWS_MESSAGES[idx]}
       </Text>
       <Animated.Text
-        numberOfLines={1}
         shouldRasterizeIOS
-        style={[styles.text, { transform: [{ translateX: translate }] }]}
+        style={[styles.text, { width: 9999, transform: [{ translateX: translate }] }]}
       >
         {NEWS_MESSAGES[idx]}
       </Animated.Text>
