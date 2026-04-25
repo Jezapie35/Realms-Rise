@@ -215,8 +215,8 @@ const GLOBAL_UPGRADES: Upgrade[] = [
       "Transcendent Order", "Kingdom of Kingdoms", "Aeon Sovereign", "Mythic Hegemony", "Godhead Realm",
     ];
     const out: Upgrade[] = [];
-    let cost = 500_000_000_000;
-    let gold = 10_000_000_000_000;
+    let cost = 500_000_000_000_000;
+    let gold = 10_000_000_000_000_000;
     let mult = 1.5;
     for (let i = 0; i < names.length; i++) {
       out.push({
