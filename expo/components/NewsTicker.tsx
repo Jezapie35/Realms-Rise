@@ -14,10 +14,10 @@ export default function NewsTicker() {
   const startAnimation = useCallback((containerWidth: number, msgWidth: number) => {
     animRef.current?.stop();
     const totalDistance = containerWidth + msgWidth;
-    const speed = 150;
+    const speed = 100;
     const duration = (totalDistance / speed) * 1000;
 
-    translate.setValue(containerWidth);
+    translate.setValue(containerWidth + 20);
     const anim = Animated.timing(translate, {
       toValue: -msgWidth,
       duration,
