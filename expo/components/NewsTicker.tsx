@@ -6,71 +6,36 @@ import { NEWS_MESSAGES } from "@/data/news";
 export default function NewsTicker() {
   const [width, setWidth] = useState(0);
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
-  const nextTextWidthRef = useRef(0);
   const translate = useRef(new Animated.Value(0)).current;
-  const animRef = useRef<Animated.CompositeAnimation | null>(null);
-  const widthRef = useRef(0);
-  const idxRef = useRef(idx);
 
-  const nextIdx = (idx + 1) % NEWS_MESSAGES.length;
+  useEffect(() => {
+    if (width === 0) return;
 
-  const startAnimation = (containerWidth: number, msgWidth: number, currentIdx: number) => {
-    animRef.current?.stop();
-    translate.setValue(containerWidth);
+    const run = (i: number) => {
+      translate.setValue(width);
+      Animated.timing(translate, {
+        toValue: -width * 3,
+        duration: 8000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setTimeout(() => {
+            const next = (i + 1) % NEWS_MESSAGES.length;
+            setIdx(next);
+            run(next);
+          }, 1000);
+        }
+      });
+    };
 
-    const duration = ((containerWidth + msgWidth) / 100) * 1000;
+    run(idx);
 
-    const anim = Animated.timing(translate, {
-      toValue: -msgWidth,
-      duration,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    });
-
-    animRef.current = anim;
-
-    anim.start(({ finished }) => {
-      if (finished) {
-        setTimeout(() => {
-          const next = (currentIdx + 1) % NEWS_MESSAGES.length;
-          idxRef.current = next;
-          setIdx(next);
-          // start next animation immediately using pre-measured width
-          startAnimation(widthRef.current, nextTextWidthRef.current, next);
-        }, 1000);
-      }
-    });
-  };
-
-  const onLayout = (e: LayoutChangeEvent) => {
-    const w = e.nativeEvent.layout.width;
-    widthRef.current = w;
-    setWidth(w);
-  };
+    return () => translate.stopAnimation();
+  }, [width]);
 
   return (
-    <View style={styles.wrap} onLayout={onLayout}>
-      {/* Measure current */}
-      <Text
-        key={idx}
-        style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
-        onLayout={(e) => {
-          const measured = e.nativeEvent.layout.width;
-          if (widthRef.current > 0 && measured > 0) {
-            startAnimation(widthRef.current, measured, idxRef.current);
-          }
-        }}
-      >
-        {NEWS_MESSAGES[idx]}
-      </Text>
-      {/* Pre-measure next */}
-      <Text
-        key={`next-${nextIdx}`}
-        style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
-        onLayout={(e) => { nextTextWidthRef.current = e.nativeEvent.layout.width; }}
-      >
-        {NEWS_MESSAGES[nextIdx]}
-      </Text>
+    <View style={styles.wrap} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
       <Animated.Text
         shouldRasterizeIOS
         style={[styles.text, { width: 9999, transform: [{ translateX: translate }] }]}
