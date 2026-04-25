@@ -31,7 +31,7 @@ export default function NewsTicker() {
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      <Animated.Text numberOfLines={1} shouldRasterizeIOS style={[styles.text, { transform: [{ translateX: translate }] }]}>
+      <Animated.Text numberOfLines={1} style={[styles.text, { transform: [{ translateX: translate }] }]}>
         {NEWS_MESSAGES[idx]}
       </Animated.Text>
     </View>
@@ -52,6 +52,6 @@ const styles = StyleSheet.create({
     color: COLORS.gold3,
     fontFamily: FONTS.serif,
     fontStyle: "italic",
-    fontSize: 14,
+    fontSize: 12,
   },
 });
