@@ -10,12 +10,11 @@ export default function NewsTicker() {
   const translate = useRef(new Animated.Value(0)).current;
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
   const widthRef = useRef<number>(0);
-  const textWidthRef = useRef<number>(0);
 
   const startAnimation = useCallback((containerWidth: number, msgWidth: number) => {
     animRef.current?.stop();
     const totalDistance = containerWidth + msgWidth;
-    const speed = 80;
+    const speed = 150;
     const duration = (totalDistance / speed) * 1000;
 
     translate.setValue(containerWidth);
@@ -33,11 +32,8 @@ export default function NewsTicker() {
     });
   }, [translate]);
 
-  // Store latest values in refs so callbacks always have fresh values
   useEffect(() => { widthRef.current = width; }, [width]);
-  useEffect(() => { textWidthRef.current = textWidth; }, [textWidth]);
 
-  // Restart animation whenever idx changes (after new text is measured)
   const onTextLayout = useCallback((e: LayoutChangeEvent) => {
     const measured = e.nativeEvent.layout.width;
     setTextWidth(measured);
