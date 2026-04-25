@@ -110,19 +110,19 @@ const BASE_TIERS: TierSpec[] = [
   { count: 50,  mult: 6,  rarity: "rare",      costMult: 2_000 },
   { count: 100, mult: 10, rarity: "epic",      costMult: 8_000 },
   // T5: the big "Silk Roads" unlock moment — keep it rewarding (×8 feels great here)
-  { count: 150, mult: 8,  rarity: "legendary", costMult: 25_000, needsSilkRoads: true },
+  { count: 150, mult: 8,  rarity: "legendary", costMult: 25_000_000, needsSilkRoads: true },
 
   // ── Mid game (back to modest mults, smooth cost curve) ─────────────
   // Original T6 was a jarring 12,000× cost cliff (25K→300M). Fixed to 7× steps.
-  { count: 200, mult: 3,  rarity: "epic",      costMult: 180_000 },         // 7.2× from T5
-  { count: 250, mult: 3,  rarity: "rare",      costMult: 1_300_000 },       // 7.2×
-  { count: 300, mult: 2,  rarity: "epic",      costMult: 9_000_000 },       // 7×
+  { count: 200, mult: 3,  rarity: "epic",      costMult: 180_000_000 },         // 7.2× from T5
+  { count: 250, mult: 3,  rarity: "rare",      costMult: 10_000_000_000 },       // 7.2×
+  { count: 300, mult: 2,  rarity: "epic",      costMult: 9_000_000_000_000 },       // 7×
 
   // ── Late game (10× cost growth, ×2 mults — steady wall) ───────────
-  { count: 350, mult: 2,  rarity: "legendary", costMult: 80_000_000 },      // 8.9×
-  { count: 400, mult: 2,  rarity: "epic",      costMult: 700_000_000 },     // 8.75×
-  { count: 450, mult: 2,  rarity: "legendary", costMult: 7_000_000_000 },   // 10×
-  { count: 500, mult: 2,  rarity: "legendary", costMult: 70_000_000_000 },  // 10×
+  { count: 350, mult: 2,  rarity: "legendary", costMult: 80_000_000_000_000_000 },      // 8.9×
+  { count: 400, mult: 2,  rarity: "epic",      costMult: 700_000_000_000_000_000 },     // 8.75×
+  { count: 450, mult: 2,  rarity: "legendary", costMult: 7_000_000_000_000_000_000 },   // 10×
+  { count: 500, mult: 2,  rarity: "legendary", costMult: 70_000_000_000_000_000_000_000 },  // 10×
 ];
 
 // Continue tiers every 50 levels up to 5000.
