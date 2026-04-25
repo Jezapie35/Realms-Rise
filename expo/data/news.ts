@@ -17,7 +17,7 @@ export const NEWS_MESSAGES: string[] = [
   "Royal cook dismissed after serving peasant stew at the banquet; king states 'I could taste the poverty'.",
   "Knight returns from quest empty-handed; insists the dragon was 'not there when I arrived'",
   "New law passed making hoarding gold mandatory for royal subjects.",
-  "Tavern dog elected town mascot in landslide victory over the mayor.",
+  "Tavern dog elected town mascot in landslide victory.",
   "Village idiot elected to council; performance indistinguishable from predecessors.",
   "Dad give me $2 please.",
 ];
