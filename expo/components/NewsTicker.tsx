@@ -7,11 +7,12 @@ export default function NewsTicker() {
   const [width, setWidth] = useState(0);
   const [idx, setIdx] = useState(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const [textWidth, setTextWidth] = useState(0);
+  const nextTextWidthRef = useRef(0);
   const translate = useRef(new Animated.Value(0)).current;
   const animRef = useRef<Animated.CompositeAnimation | null>(null);
-  const readyRef = useRef(false);
 
-  // Step 1: run animation whenever BOTH widths are known
+  const nextIdx = (idx + 1) % NEWS_MESSAGES.length;
+
   useEffect(() => {
     if (width === 0 || textWidth === 0) return;
 
@@ -28,11 +29,13 @@ export default function NewsTicker() {
     });
 
     animRef.current = anim;
-    readyRef.current = true;
 
     anim.start(({ finished }) => {
       if (finished) {
-        setIdx((i) => (i + 1) % NEWS_MESSAGES.length);
+        // use pre-measured next width, skip the measurement delay
+        const nextWidth = nextTextWidthRef.current;
+        setIdx(nextIdx);
+        if (nextWidth > 0) setTextWidth(nextWidth);
       }
     });
 
@@ -43,13 +46,21 @@ export default function NewsTicker() {
 
   return (
     <View style={styles.wrap} onLayout={onLayout}>
-      {/* Remount on idx change to force fresh onLayout measurement */}
+      {/* Measure current message */}
       <Text
         key={idx}
         style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
         onLayout={(e) => setTextWidth(e.nativeEvent.layout.width)}
       >
         {NEWS_MESSAGES[idx]}
+      </Text>
+      {/* Pre-measure NEXT message in background */}
+      <Text
+        key={`next-${nextIdx}`}
+        style={[styles.text, { position: "absolute", opacity: 0, width: 9999 }]}
+        onLayout={(e) => { nextTextWidthRef.current = e.nativeEvent.layout.width; }}
+      >
+        {NEWS_MESSAGES[nextIdx]}
       </Text>
       <Animated.Text
         shouldRasterizeIOS
