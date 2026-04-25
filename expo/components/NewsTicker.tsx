@@ -1,37 +1,45 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Easing, LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, LayoutChangeEvent, StyleSheet, View, Text } from "react-native";
 import { COLORS, FONTS } from "@/constants/colors";
 import { NEWS_MESSAGES } from "@/data/news";
 
 export default function NewsTicker() {
-  const [width, setWidth] = useState<number>(0);
-  const [idx, setIdx] = useState<number>(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
+  const [width, setWidth] = useState(0);
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * NEWS_MESSAGES.length));
   const translate = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (width === 0) return;
-    translate.setValue(width);
-    const loop = Animated.loop(
-      Animated.timing(translate, {
-        toValue: -width,
-        duration: 18000,
-        useNativeDriver: true,
-        easing: Easing.linear,
-      }),
-    );
-    loop.start();
-    const iv = setInterval(() => setIdx((i) => (i + 1) % NEWS_MESSAGES.length), 18000);
-    return () => {
-      loop.stop();
-      clearInterval(iv);
-    };
-  }, [translate, width]);
 
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+    const run = (i: number) => {
+      translate.setValue(width);
+      Animated.timing(translate, {
+        toValue: -width * 3,
+        duration: 8000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setTimeout(() => {
+            const next = (i + 1) % NEWS_MESSAGES.length;
+            setIdx(next);
+            run(next);
+          }, 1000);
+        }
+      });
+    };
+
+    run(idx);
+
+    return () => translate.stopAnimation();
+  }, [width]);
 
   return (
-    <View style={styles.wrap} onLayout={onLayout}>
-      <Animated.Text numberOfLines={1} style={[styles.text, { transform: [{ translateX: translate }] }]}>
+    <View style={styles.wrap} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      <Animated.Text
+        shouldRasterizeIOS
+        style={[styles.text, { width: 9999, transform: [{ translateX: translate }] }]}
+      >
         {NEWS_MESSAGES[idx]}
       </Animated.Text>
     </View>
