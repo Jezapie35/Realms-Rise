@@ -11,7 +11,7 @@ import { formatGold } from "@/utils/formatNumber";
 import TopPanel from "@/components/TopPanel";
 import UpgradeStrip from "@/components/UpgradeStrip";
 import BuildingRow from "@/components/BuildingRow";
-import PrestigeModal from "@/components/PrestigeModal";
+import SovereigntyScreen from "@/components/SovereigntyScreen";
 import SettingsModal from "@/components/SettingsModal";
 import AchievementsModal from "@/components/AchievementsModal";
 import SkillTreeSheet from "@/components/SkillTreeSheet";
@@ -35,7 +35,7 @@ export default function MainScreen() {
     prestigeReward,
     hardReset,
   } = useGame();
-  const [showPrestige, setShowPrestige] = useState<boolean>(false);
+  const [showSovereignty, setShowSovereignty] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showSkillTree, setShowSkillTree] = useState<boolean>(false);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
@@ -86,7 +86,7 @@ export default function MainScreen() {
   const footer = (
     <View style={styles.footerWrap}>
       {eligible ? (
-        <PrestigeFooterButton reward={prestigeReward} onPress={() => setShowPrestige(true)} />
+        <PrestigeFooterButton reward={prestigeReward} onPress={() => setShowSovereignty(true)} />
       ) : (
         <View style={styles.prestigeLocked}>
           <Lock color={COLORS.textDim} size={22} />
@@ -177,13 +177,13 @@ export default function MainScreen() {
         </Pressable>
       )}
 
-      <PrestigeModal
-        visible={showPrestige}
-        onConfirm={(carryOverId) => {
-          setShowPrestige(false);
-          prestige(carryOverId);
+      <SovereigntyScreen
+        visible={showSovereignty}
+        onReturn={() => setShowSovereignty(false)}
+        onStartNewKingdom={() => {
+          setShowSovereignty(false);
+          prestige(null);
         }}
-        onCancel={() => setShowPrestige(false)}
       />
       <SettingsModal
         visible={showSettings}
