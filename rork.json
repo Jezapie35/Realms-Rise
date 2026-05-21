@@ -1,0 +1,10 @@
+{
+  "$schema": "https://rork.com/schema/rork.json",
+  "apps": [
+    {
+      "name": "Realm's Rise",
+      "path": "expo",
+      "framework": "react-native"
+    }
+  ]
+}

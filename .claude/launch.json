@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Expo (mobile tunnel)",
+      "runtimeExecutable": "/Users/jeremymurch/.bun/bin/bunx",
+      "runtimeArgs": ["rork", "start", "-p", "p6g1o13c5vosg3hrjw9tv", "--tunnel"],
+      "cwd": "expo",
+      "port": 8081
+    },
+    {
+      "name": "Expo Web",
+      "runtimeExecutable": "/Users/jeremymurch/.bun/bin/bunx",
+      "runtimeArgs": ["rork", "start", "-p", "p6g1o13c5vosg3hrjw9tv", "--web", "--tunnel"],
+      "cwd": "expo",
+      "port": 8081
+    },
+    {
+      "name": "Expo Web (debug)",
+      "runtimeExecutable": "/Users/jeremymurch/.bun/bin/bunx",
+      "runtimeArgs": ["rork", "start", "-p", "p6g1o13c5vosg3hrjw9tv", "--web", "--tunnel"],
+      "env": { "DEBUG": "expo*" },
+      "cwd": "expo",
+      "port": 8081
+    }
+  ]
+}

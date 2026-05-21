@@ -1,0 +1,376 @@
+import React, { useMemo, useState } from "react";
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/constants/colors";
+import { useGame } from "@/context/GameContext";
+import { availableUpgrades } from "@/data/gameEngine";
+import { RARITY_COLORS, RARITY_LABELS, UPGRADE_BY_ID, upgradeTierImage, Upgrade } from "@/data/upgrades";
+import { formatGold } from "@/utils/formatNumber";
+import { BUILDING_ICON_MAP } from "./icons";
+
+export default function UpgradeStrip() {
+  const { state, buyUpgrade, buyAllUpgrades } = useGame();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [purchasedOpen, setPurchasedOpen] = useState<boolean>(false);
+
+  const list = useMemo<Upgrade[]>(() => {
+    const arr = availableUpgrades(state);
+    return [...arr].sort((a, b) => a.cost - b.cost);
+  }, [state]);
+  const selected = selectedId ? UPGRADE_BY_ID[selectedId] : null;
+
+  return (
+    <View style={styles.wrap}>
+      <Pressable style={styles.leftBadge} onPress={() => setPurchasedOpen(true)} testID="upgrade-count">
+        <View style={styles.countCircle}>
+          <Text style={styles.countText}>{state.purchasedUpgrades.length}</Text>
+        </View>
+      </Pressable>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        {list.length === 0 ? (
+          <Text style={styles.empty}>No upgrades available yet. Keep building.</Text>
+        ) : (
+          list.map((u) => {
+            const affordable = state.gold >= u.cost;
+            const rColor = RARITY_COLORS[u.rarity];
+            return (
+              <Pressable
+                key={u.id}
+                onPress={() => setSelectedId(u.id === selectedId ? null : u.id)}
+                style={[
+                  styles.tile,
+                  {
+                    borderColor: affordable ? rColor : COLORS.bg5,
+                    opacity: affordable ? 1 : 0.35,
+                    backgroundColor: affordable ? COLORS.bg4 : COLORS.bg1,
+                  },
+                  affordable && { shadowColor: rColor, shadowOpacity: 0.6, shadowRadius: 10, shadowOffset: { width: 0, height: 0 }, elevation: 8 },
+                ]}
+                testID={`upgrade-${u.id}`}
+              >
+                {(() => {
+                  const Icon = BUILDING_ICON_MAP[u.buildingId];
+                  if (Icon) return <Icon size={36} />;
+                  return (
+                    <Image
+                      source={require("@/assets/images/upgrade_generic.png")}
+                      style={{ width: 36, height: 36 }}
+                      resizeMode="contain"
+                    />
+                  );
+                })()}
+                <View style={[styles.rarityDot, { backgroundColor: rColor }]} />
+              </Pressable>
+            );
+          })
+        )}
+      </ScrollView>
+
+      <Pressable
+        onPress={buyAllUpgrades}
+        style={({ pressed }) => [styles.buyAllBtn, pressed && { opacity: 0.7 }]}
+        testID="buy-all-upgrades"
+      >
+        <Text style={styles.buyAllText}>Buy{"\n"}All</Text>
+      </Pressable>
+
+      <Modal
+        visible={!!selected}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedId(null)}
+      >
+        {selected && (
+          <UpgradeTooltip
+            upgrade={selected}
+            affordable={state.gold >= selected.cost}
+            onBuy={() => {
+              buyUpgrade(selected.id);
+              setSelectedId(null);
+            }}
+            onDismiss={() => setSelectedId(null)}
+          />
+        )}
+      </Modal>
+
+      <Modal visible={purchasedOpen} transparent animationType="fade" onRequestClose={() => setPurchasedOpen(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setPurchasedOpen(false)}>
+          <View style={styles.purchasedCard}>
+            <Text style={styles.purchasedTitle}>Purchased Upgrades</Text>
+            <ScrollView style={{ maxHeight: 380 }}>
+              {state.purchasedUpgrades.length === 0 ? (
+                <Text style={styles.purchasedEmpty}>None yet. Buy upgrades from the strip.</Text>
+              ) : (
+                state.purchasedUpgrades.map((id) => {
+                  const u = UPGRADE_BY_ID[id];
+                  if (!u) return null;
+                  return (
+                    <View key={id} style={styles.purchasedRow}>
+                      <View style={[styles.rarityTag, { borderColor: RARITY_COLORS[u.rarity] }]}>
+                        <Text style={[styles.rarityTagText, { color: RARITY_COLORS[u.rarity] }]}>
+                          {RARITY_LABELS[u.rarity]}
+                        </Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.purchasedName}>{u.name}</Text>
+                        <Text style={styles.purchasedDesc}>{u.description}</Text>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
+  );
+}
+
+interface TooltipProps {
+  upgrade: Upgrade;
+  affordable: boolean;
+  onBuy: () => void;
+  onDismiss: () => void;
+}
+
+function UpgradeTooltip({ upgrade, affordable, onBuy, onDismiss }: TooltipProps) {
+  const rColor = RARITY_COLORS[upgrade.rarity];
+  return (
+    <Pressable style={styles.tooltipBackdrop} onPress={onDismiss}>
+      <View style={[styles.tooltip, { borderColor: rColor }]}>
+        <View style={[styles.rarityTag, { borderColor: rColor, alignSelf: "flex-start", marginBottom: 6 }]}>
+          <Text style={[styles.rarityTagText, { color: rColor }]}>{RARITY_LABELS[upgrade.rarity]}</Text>
+        </View>
+        <Text style={styles.tooltipName}>{upgrade.name}</Text>
+        <Text style={styles.tooltipDesc}>{upgrade.description}</Text>
+        <View style={styles.tooltipCost}>
+          <Text style={styles.tooltipCostLabel}>Cost</Text>
+          <Text style={styles.tooltipCostValue}>{formatGold(upgrade.cost)} gold</Text>
+        </View>
+        <Pressable
+          onPress={onBuy}
+          disabled={!affordable}
+          style={[styles.tooltipBtn, affordable ? styles.tooltipBtnActive : styles.tooltipBtnDisabled]}
+        >
+          <Text style={[styles.tooltipBtnText, !affordable && styles.tooltipBtnTextDim]}>
+            {affordable ? "Purchase" : "Not enough gold"}
+          </Text>
+        </Pressable>
+      </View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {
+    height: 68,
+    flexDirection: "row",
+    backgroundColor: COLORS.bg1,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.bg5,
+    alignItems: "center",
+    paddingHorizontal: 6,
+    gap: 6,
+  },
+  leftBadge: {
+    width: 48,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: COLORS.bg4,
+    borderWidth: 1,
+    borderColor: COLORS.gold4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countText: {
+    color: COLORS.gold3,
+    fontFamily: FONTS.serif,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  scroll: { paddingRight: 12, alignItems: "center", gap: 8 },
+  empty: {
+    color: COLORS.textDim,
+    fontFamily: FONTS.serif,
+    fontStyle: "italic",
+    fontSize: 12,
+    paddingHorizontal: 8,
+  },
+  tile: {
+    width: 56,
+    height: 56,
+    borderRadius: RADIUS.md,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 2,
+  },
+  rarityDot: {
+    position: "absolute",
+    right: 4,
+    bottom: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  tooltipBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  tooltip: {
+    width: 260,
+    backgroundColor: COLORS.bg4,
+    borderWidth: 1,
+    borderRadius: RADIUS.lg,
+    padding: 14,
+    gap: 6,
+    ...SHADOWS.cardLift,
+  },
+  tooltipName: {
+    color: COLORS.textGold,
+    fontFamily: FONTS.serif,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  tooltipDesc: {
+    color: COLORS.textSub,
+    fontFamily: FONTS.system,
+    fontStyle: "italic",
+    fontSize: 12,
+  },
+  tooltipCost: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 6,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.bg5,
+  },
+  tooltipCostLabel: {
+    color: COLORS.textDim,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    fontWeight: "700",
+  },
+  tooltipCostValue: {
+    color: COLORS.textGold,
+    fontFamily: FONTS.serif,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  tooltipBtn: {
+    height: 38,
+    borderRadius: RADIUS.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  tooltipBtnActive: {
+    backgroundColor: COLORS.gold2,
+  },
+  tooltipBtnDisabled: {
+    backgroundColor: COLORS.bg5,
+  },
+  tooltipBtnText: {
+    color: COLORS.bg1,
+    fontFamily: FONTS.system,
+    fontWeight: "800",
+    fontSize: 14,
+  },
+  tooltipBtnTextDim: {
+    color: COLORS.textDim,
+  },
+  rarityTag: {
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: RADIUS.sm,
+  },
+  rarityTagText: {
+    fontFamily: FONTS.system,
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  buyAllBtn: {
+    width: 48,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.bg4,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.gold4,
+  },
+  buyAllText: {
+    color: COLORS.textGold,
+    fontFamily: FONTS.serif,
+    fontWeight: "800",
+    fontSize: 11,
+    textAlign: "center",
+    lineHeight: 14,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  purchasedCard: {
+    width: "100%",
+    maxWidth: 420,
+    backgroundColor: COLORS.bg3,
+    borderRadius: RADIUS.lg,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.gold4,
+  },
+  purchasedTitle: {
+    color: COLORS.textGold,
+    fontFamily: FONTS.serif,
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  purchasedEmpty: {
+    color: COLORS.textDim,
+    fontFamily: FONTS.serif,
+    fontStyle: "italic",
+    textAlign: "center",
+    padding: 20,
+  },
+  purchasedRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.bg5,
+  },
+  purchasedName: {
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.serif,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  purchasedDesc: {
+    color: COLORS.textSub,
+    fontFamily: FONTS.system,
+    fontSize: 11,
+    fontStyle: "italic",
+    marginTop: 2,
+  },
+});
