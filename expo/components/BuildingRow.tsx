@@ -49,7 +49,10 @@ function BuildingRowBase({
   const quantity = useMemo<number>(() => {
     if (buyMode === "1") return 1;
     if (buyMode === "10") return 10;
-    if (buyMode === "next") return Math.max(1, getNextUpgradeMilestone(count) - count);
+    if (buyMode === "next") {
+      const hasSilkRoads = unlockedSkillNodes.includes("commerce_3b");
+      return Math.max(1, getNextUpgradeMilestone(count, hasSilkRoads) - count);
+    }
     return Math.max(1, calculateBuyMaxCount(building.id, gold, count, unlockedSkillNodes, purchasedUpgrades, legacyUpgrades));
   }, [buyMode, building.id, gold, count, unlockedSkillNodes, purchasedUpgrades, legacyUpgrades]);
 
@@ -123,7 +126,7 @@ function BuildingRowBase({
         <Text style={styles.name} numberOfLines={1}>
           {building.name}
         </Text>
-        <Text style={styles.desc} numberOfLines={1}>
+        <Text style={styles.desc} numberOfLines={2}>
           {building.description}
         </Text>
         {count > 0 ? (
@@ -163,7 +166,7 @@ export default memo(BuildingRowBase);
 
 const styles = StyleSheet.create({
   row: {
-    height: 96,
+    minHeight: 110,
     flexDirection: "row",
     backgroundColor: COLORS.bg2,
     borderBottomWidth: 1,

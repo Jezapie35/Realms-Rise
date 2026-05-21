@@ -1,14 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Gift, Play, RotateCcw } from 'lucide-react-native';
+import { Gift, Play } from 'lucide-react-native';
 import { COLORS, FONTS, RADIUS, SHADOWS } from '@/constants/colors';
 import { useGame } from '@/context/GameContext';
 import {
   AD_BONUS_DURATION_MS,
   getAdCooldownEnd,
   isRemoveAdsPurchased,
-  purchaseRemoveAds,
-  restorePurchases,
   REWARDED_AD_UNIT_ID,
   setAdCooldownEnd,
   showRewardedAd,
@@ -37,6 +35,14 @@ export default function WatchAdButton() {
       setAdsRemoved(purchased);
       setCooldownEnd(end);
     });
+  }, []);
+
+  // Re-check ads removed status whenever this mounts (e.g. after purchase in Settings)
+  useEffect(() => {
+    const check = setInterval(() => {
+      isRemoveAdsPurchased().then(setAdsRemoved);
+    }, 5000);
+    return () => clearInterval(check);
   }, []);
 
   const onCooldown = cooldownEnd > now;
@@ -75,38 +81,6 @@ export default function WatchAdButton() {
     }
   }, [loading, onCooldown, adsRemoved, grantBonus]);
 
-  const handleBuyRemoveAds = useCallback(async () => {
-    setLoading(true);
-    try {
-      const purchased = await purchaseRemoveAds();
-      if (purchased) {
-        setAdsRemoved(true);
-        Alert.alert('Thank you!', 'Ads removed. Claim ×2 Gold anytime, for free.');
-      }
-    } catch (err: any) {
-      Alert.alert('Purchase Failed', err?.message ?? 'Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleRestore = useCallback(async () => {
-    setLoading(true);
-    try {
-      const restored = await restorePurchases();
-      if (restored) {
-        setAdsRemoved(true);
-        Alert.alert('Restored!', 'Remove Ads has been restored.');
-      } else {
-        Alert.alert('Nothing to Restore', 'No eligible purchases found.');
-      }
-    } catch (err: any) {
-      Alert.alert('Restore Failed', err?.message ?? 'Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const disabled = loading || onCooldown;
   const remainingMs = cooldownEnd - now;
 
@@ -144,19 +118,8 @@ export default function WatchAdButton() {
         )}
       </Pressable>
 
-      {adsRemoved ? (
-        <Text style={styles.noAdsLabel}>✓ No Ads</Text>
-      ) : (
-        <View style={styles.iapRow}>
-          <Pressable onPress={handleBuyRemoveAds} disabled={loading} style={styles.iapBtn}>
-            <Text style={styles.iapText}>Remove Ads — $2.99</Text>
-          </Pressable>
-          <Text style={styles.dot}>·</Text>
-          <Pressable onPress={handleRestore} disabled={loading} style={styles.iapBtn}>
-            <RotateCcw size={11} color={COLORS.textDim} />
-            <Text style={styles.iapText}>Restore</Text>
-          </Pressable>
-        </View>
+      {adsRemoved && (
+        <Text style={styles.noAdsLabel}>✓ No Ads · Remove Ads purchased</Text>
       )}
     </View>
   );
@@ -196,27 +159,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   dim: { color: COLORS.textDim },
-  iapRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  iapBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    padding: 4,
-  },
-  iapText: {
-    color: COLORS.textDim,
-    fontFamily: FONTS.serif,
-    fontSize: 12,
-  },
-  dot: {
-    color: COLORS.textDim,
-    fontSize: 12,
-  },
   noAdsLabel: {
     textAlign: 'center',
     color: COLORS.greenLight,

@@ -15,6 +15,7 @@ export interface HapticEvents {
 interface Settings {
   strength: HapticStrength;
   events: HapticEvents;
+  hideAcquiredAchievements: boolean;
 }
 
 const STORAGE_KEY = "realms_rise_settings_v1";
@@ -22,6 +23,7 @@ const STORAGE_KEY = "realms_rise_settings_v1";
 const DEFAULT_SETTINGS: Settings = {
   strength: "light",
   events: { click: true, purchase: true, skill: true },
+  hideAcquiredAchievements: false,
 };
 
 let currentSettings: Settings = DEFAULT_SETTINGS;
@@ -54,6 +56,7 @@ export const [SettingsProvider, useSettings] = createContextHook(() => {
           const merged: Settings = {
             strength: parsed.strength ?? DEFAULT_SETTINGS.strength,
             events: { ...DEFAULT_SETTINGS.events, ...(parsed.events ?? {}) },
+            hideAcquiredAchievements: parsed.hideAcquiredAchievements ?? DEFAULT_SETTINGS.hideAcquiredAchievements,
           };
           setSettings(merged);
           currentSettings = merged;
@@ -96,8 +99,12 @@ export const [SettingsProvider, useSettings] = createContextHook(() => {
     }));
   }, []);
 
+  const setHideAcquiredAchievements = useCallback((val: boolean) => {
+    setSettings((prev) => ({ ...prev, hideAcquiredAchievements: val }));
+  }, []);
+
   return useMemo(
-    () => ({ settings, setStrength, toggleEvent, loaded }),
-    [settings, setStrength, toggleEvent, loaded],
+    () => ({ settings, setStrength, toggleEvent, setHideAcquiredAchievements, loaded }),
+    [settings, setStrength, toggleEvent, setHideAcquiredAchievements, loaded],
   );
 });

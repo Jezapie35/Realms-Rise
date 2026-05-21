@@ -1,8 +1,14 @@
-import React, { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { RotateCcw } from "lucide-react-native";
 import { COLORS, FONTS, RADIUS } from "@/constants/colors";
 import { HapticStrength, useSettings } from "@/context/SettingsContext";
 import { useGame } from "@/context/GameContext";
+import {
+  isRemoveAdsPurchased,
+  purchaseRemoveAds,
+  restorePurchases,
+} from "@/services/monetisation";
 
 interface Props {
   visible: boolean;
@@ -35,8 +41,48 @@ export default function SettingsModal({ visible, onClose, onHardReset }: Props) 
   const [confirm, setConfirm] = useState<number>(0);
   const [showDebug, setShowDebug] = useState(false);
   const [customGold, setCustomGold] = useState("");
-  const { settings, setStrength, toggleEvent } = useSettings();
+  const [adsRemoved, setAdsRemoved] = useState(false);
+  const [iapLoading, setIapLoading] = useState(false);
+  const { settings, setStrength, toggleEvent, setHideAcquiredAchievements } = useSettings();
   const { debugAddGold, state } = useGame();
+
+  useEffect(() => {
+    if (visible) {
+      isRemoveAdsPurchased().then(setAdsRemoved);
+    }
+  }, [visible]);
+
+  const handleBuyRemoveAds = useCallback(async () => {
+    setIapLoading(true);
+    try {
+      const purchased = await purchaseRemoveAds();
+      if (purchased) {
+        setAdsRemoved(true);
+        Alert.alert("Thank you!", "Ads removed. Claim ×2 Gold anytime, for free.");
+      }
+    } catch (err: any) {
+      Alert.alert("Purchase Failed", err?.message ?? "Please try again.");
+    } finally {
+      setIapLoading(false);
+    }
+  }, []);
+
+  const handleRestore = useCallback(async () => {
+    setIapLoading(true);
+    try {
+      const restored = await restorePurchases();
+      if (restored) {
+        setAdsRemoved(true);
+        Alert.alert("Restored!", "Remove Ads has been restored.");
+      } else {
+        Alert.alert("Nothing to Restore", "No eligible purchases found.");
+      }
+    } catch (err: any) {
+      Alert.alert("Restore Failed", err?.message ?? "Please try again.");
+    } finally {
+      setIapLoading(false);
+    }
+  }, []);
 
   const handleReset = async () => {
     if (confirm < 1) { setConfirm(1); return; }
@@ -164,6 +210,62 @@ export default function SettingsModal({ visible, onClose, onHardReset }: Props) 
                 </View>
               </View>
             )}
+
+            <View style={styles.divider} />
+
+            {/* Store */}
+            <Text style={styles.sectionTitle}>Store</Text>
+            {adsRemoved ? (
+              <View style={styles.storeRow}>
+                <Text style={[styles.storeLabel, { color: COLORS.greenLight }]}>✓ Ads Removed</Text>
+                <Text style={styles.storeSub}>Thank you for your support!</Text>
+              </View>
+            ) : (
+              <View style={styles.storeRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.storeLabel}>Remove Ads — $2.99</Text>
+                  <Text style={styles.storeSub}>Watch ad button becomes free. No ads ever.</Text>
+                </View>
+                {iapLoading ? (
+                  <ActivityIndicator size="small" color={COLORS.gold2} />
+                ) : (
+                  <Pressable
+                    onPress={handleBuyRemoveAds}
+                    style={({ pressed }) => [styles.storeBtn, pressed && { opacity: 0.7 }]}
+                  >
+                    <Text style={styles.storeBtnText}>Buy</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+            {!adsRemoved && (
+              <Pressable
+                onPress={handleRestore}
+                disabled={iapLoading}
+                style={({ pressed }) => [styles.restoreRow, pressed && { opacity: 0.7 }]}
+              >
+                <RotateCcw size={11} color={COLORS.textDim} />
+                <Text style={styles.restoreText}>Restore Purchases</Text>
+              </Pressable>
+            )}
+
+            <View style={styles.divider} />
+
+            {/* Achievements */}
+            <Text style={styles.sectionTitle}>Achievements</Text>
+            <Pressable
+              onPress={() => setHideAcquiredAchievements(!settings.hideAcquiredAchievements)}
+              style={styles.eventRow}
+              testID="hide-acquired-toggle"
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.eventLabel}>Hide Acquired</Text>
+                <Text style={styles.eventDesc}>Only show locked achievements in the list</Text>
+              </View>
+              <View style={[styles.toggle, settings.hideAcquiredAchievements && styles.toggleOn]}>
+                <View style={[styles.toggleKnob, settings.hideAcquiredAchievements && styles.toggleKnobOn]} />
+              </View>
+            </Pressable>
 
             <View style={styles.divider} />
 
@@ -346,6 +448,54 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   addBtnText: { color: "#cc66ff", fontFamily: FONTS.serif, fontWeight: "800", fontSize: 14 },
+  storeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.bg4,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.bg5,
+    padding: 12,
+    gap: 12,
+  },
+  storeLabel: {
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.serif,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  storeSub: {
+    color: COLORS.textDim,
+    fontFamily: FONTS.system,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  storeBtn: {
+    backgroundColor: COLORS.gold5,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: COLORS.gold3,
+  },
+  storeBtnText: {
+    color: COLORS.textGold,
+    fontFamily: FONTS.serif,
+    fontWeight: "800",
+    fontSize: 13,
+  },
+  restoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 6,
+  },
+  restoreText: {
+    color: COLORS.textDim,
+    fontFamily: FONTS.serif,
+    fontSize: 12,
+  },
   body: { color: COLORS.textSub, fontFamily: FONTS.system, fontSize: 13, lineHeight: 18 },
   resetBtn: {
     marginTop: 6,

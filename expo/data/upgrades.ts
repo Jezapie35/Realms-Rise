@@ -162,7 +162,7 @@ const BASE_TIERS: TierSpec[] = [
   { count: 500, mult: 2,  rarity: "legendary", costMult: 500_000_000_000_000 },   // Hut: 7.5Q    | Palace: 27.4Qi (14.7× T11)
 ];
 
-// Extended tiers every 50 counts up to 5000. ~15× cost steps, mult ×1.5 per tier.
+// Extended tiers every 50 counts up to 5000. ~15× cost steps, mult constant ×2 per tier.
 function extendedTiers(): TierSpec[] {
   const list: TierSpec[] = [...BASE_TIERS];
   let mult = 2;
@@ -170,7 +170,7 @@ function extendedTiers(): TierSpec[] {
   const rarityCycle: Rarity[] = ["epic", "legendary", "rare", "epic", "legendary"];
   let idx = 0;
   for (let count = 550; count <= 5000; count += 50) {
-    mult = Math.round(mult * 1.5);
+    mult = 2; // constant ×2 per extended tier
     costMult = costMult * 15;
     list.push({
       count,

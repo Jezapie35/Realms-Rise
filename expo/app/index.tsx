@@ -164,7 +164,7 @@ export default function MainScreen() {
         data={buildingData}
         keyExtractor={(item) => item.b.id}
         renderItem={renderItem}
-        getItemLayout={(_, index) => ({ length: 96, offset: 96 * index, index })}
+        getItemLayout={(_, index) => ({ length: 110, offset: 110 * index, index })}
         initialNumToRender={6}
         ListFooterComponent={footer}
         style={styles.list}

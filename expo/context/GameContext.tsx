@@ -194,7 +194,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         for (const m of MILESTONES) {
           if (!triggered.includes(m.id) && m.check(probe)) {
             triggered.push(m.id);
-            pushToast(m.title, m.desc, "milestone");
+            if (m.important) pushToast(m.title, m.desc, "milestone");
           }
         }
 
@@ -377,6 +377,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
             : null;
         const next: GameState = {
           ...prev,
+          gold: 0,
           prestigeCount: prev.prestigeCount + 1,
           sealsAvailable: prev.sealsAvailable + reward,
           sealsTotal: prev.sealsTotal + reward,
@@ -430,7 +431,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         lastTimestamp: now,
         runStartTime: now,
         lastInterestTick: now,
-        triggeredMilestones: [],
+        // NOTE: triggeredMilestones is intentionally NOT reset — achievements persist across prestiges
       };
       pushToast("A New Kingdom Rises", "Your legacy powers are now active.", "success");
       return recalc(fresh, now);

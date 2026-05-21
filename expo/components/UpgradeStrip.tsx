@@ -11,12 +11,20 @@ export default function UpgradeStrip() {
   const { state, buyUpgrade, buyAllUpgrades } = useGame();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [purchasedOpen, setPurchasedOpen] = useState<boolean>(false);
+  const [purchasedDetailId, setPurchasedDetailId] = useState<string | null>(null);
 
   const list = useMemo<Upgrade[]>(() => {
     const arr = availableUpgrades(state);
     return [...arr].sort((a, b) => a.cost - b.cost);
   }, [state]);
   const selected = selectedId ? UPGRADE_BY_ID[selectedId] : null;
+
+  const canBuyAll = useMemo(
+    () => list.some((u) => state.gold >= u.cost),
+    [list, state.gold],
+  );
+
+  const purchasedDetail = purchasedDetailId ? UPGRADE_BY_ID[purchasedDetailId] : null;
 
   return (
     <View style={styles.wrap}>
@@ -67,11 +75,12 @@ export default function UpgradeStrip() {
       </ScrollView>
 
       <Pressable
-        onPress={buyAllUpgrades}
-        style={({ pressed }) => [styles.buyAllBtn, pressed && { opacity: 0.7 }]}
+        onPress={canBuyAll ? buyAllUpgrades : undefined}
+        disabled={!canBuyAll}
+        style={[styles.buyAllBtn, !canBuyAll && styles.buyAllBtnDisabled]}
         testID="buy-all-upgrades"
       >
-        <Text style={styles.buyAllText}>Buy{"\n"}All</Text>
+        <Text style={[styles.buyAllText, !canBuyAll && styles.buyAllTextDim]}>Buy{"\n"}All</Text>
       </Pressable>
 
       <Modal
@@ -96,32 +105,70 @@ export default function UpgradeStrip() {
       <Modal visible={purchasedOpen} transparent animationType="fade" onRequestClose={() => setPurchasedOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setPurchasedOpen(false)}>
           <View style={styles.purchasedCard}>
-            <Text style={styles.purchasedTitle}>Purchased Upgrades</Text>
+            <Text style={styles.purchasedTitle}>
+              Purchased Upgrades{state.purchasedUpgrades.length > 0 ? ` (${state.purchasedUpgrades.length})` : ""}
+            </Text>
             <ScrollView style={{ maxHeight: 380 }}>
               {state.purchasedUpgrades.length === 0 ? (
                 <Text style={styles.purchasedEmpty}>None yet. Buy upgrades from the strip.</Text>
               ) : (
-                state.purchasedUpgrades.map((id) => {
-                  const u = UPGRADE_BY_ID[id];
-                  if (!u) return null;
-                  return (
-                    <View key={id} style={styles.purchasedRow}>
-                      <View style={[styles.rarityTag, { borderColor: RARITY_COLORS[u.rarity] }]}>
-                        <Text style={[styles.rarityTagText, { color: RARITY_COLORS[u.rarity] }]}>
-                          {RARITY_LABELS[u.rarity]}
-                        </Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.purchasedName}>{u.name}</Text>
-                        <Text style={styles.purchasedDesc}>{u.description}</Text>
-                      </View>
-                    </View>
-                  );
-                })
+                <View style={styles.purchasedGrid}>
+                  {state.purchasedUpgrades.map((id) => {
+                    const u = UPGRADE_BY_ID[id];
+                    if (!u) return null;
+                    const rColor = RARITY_COLORS[u.rarity];
+                    const Icon = BUILDING_ICON_MAP[u.buildingId];
+                    return (
+                      <Pressable
+                        key={id}
+                        style={[styles.purchasedGridTile, { borderColor: rColor }]}
+                        onPress={() => {
+                          setPurchasedDetailId(id);
+                        }}
+                      >
+                        {Icon ? (
+                          <Icon size={28} />
+                        ) : (
+                          <Image
+                            source={require("@/assets/images/upgrade_generic.png")}
+                            style={{ width: 28, height: 28 }}
+                            resizeMode="contain"
+                          />
+                        )}
+                        <View style={[styles.purchasedGridDot, { backgroundColor: rColor }]} />
+                      </Pressable>
+                    );
+                  })}
+                </View>
               )}
             </ScrollView>
           </View>
         </Pressable>
+      </Modal>
+
+      {/* Purchased upgrade detail popup */}
+      <Modal
+        visible={!!purchasedDetail}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPurchasedDetailId(null)}
+      >
+        {purchasedDetail && (
+          <Pressable style={styles.tooltipBackdrop} onPress={() => setPurchasedDetailId(null)}>
+            <View style={[styles.tooltip, { borderColor: RARITY_COLORS[purchasedDetail.rarity] }]}>
+              <View style={[styles.rarityTag, { borderColor: RARITY_COLORS[purchasedDetail.rarity], alignSelf: "flex-start", marginBottom: 6 }]}>
+                <Text style={[styles.rarityTagText, { color: RARITY_COLORS[purchasedDetail.rarity] }]}>
+                  {RARITY_LABELS[purchasedDetail.rarity]}
+                </Text>
+              </View>
+              <Text style={styles.tooltipName}>{purchasedDetail.name}</Text>
+              <Text style={styles.tooltipDesc}>{purchasedDetail.description}</Text>
+              <View style={[styles.tooltipCost, { marginTop: 10 }]}>
+                <Text style={[styles.tooltipBtnText, { color: COLORS.textSub, fontSize: 12 }]}>Tap anywhere to close</Text>
+              </View>
+            </View>
+          </Pressable>
+        )}
       </Modal>
     </View>
   );
@@ -314,6 +361,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.gold4,
   },
+  buyAllBtnDisabled: {
+    backgroundColor: COLORS.bg2,
+    borderColor: COLORS.bg5,
+  },
   buyAllText: {
     color: COLORS.textGold,
     fontFamily: FONTS.serif,
@@ -321,6 +372,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center",
     lineHeight: 14,
+  },
+  buyAllTextDim: {
+    color: COLORS.textDim,
   },
   modalBackdrop: {
     flex: 1,
@@ -352,25 +406,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
     padding: 20,
   },
-  purchasedRow: {
+  purchasedGrid: {
     flexDirection: "row",
-    gap: 10,
-    alignItems: "flex-start",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.bg5,
+    flexWrap: "wrap",
+    gap: 8,
+    paddingTop: 4,
+    paddingBottom: 8,
   },
-  purchasedName: {
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.serif,
-    fontSize: 14,
-    fontWeight: "700",
+  purchasedGridTile: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.md,
+    borderWidth: 2,
+    backgroundColor: COLORS.bg4,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
   },
-  purchasedDesc: {
-    color: COLORS.textSub,
-    fontFamily: FONTS.system,
-    fontSize: 11,
-    fontStyle: "italic",
-    marginTop: 2,
+  purchasedGridDot: {
+    position: "absolute",
+    right: 3,
+    bottom: 3,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
 });

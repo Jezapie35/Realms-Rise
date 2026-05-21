@@ -289,10 +289,12 @@ export function isUpgradeAvailable(upgradeId: string, state: GameState): boolean
   return true;
 }
 
-const EARLY_MILESTONES = [10, 25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
+const EARLY_MILESTONES_BASE      = [10, 25, 50, 100, 200, 250, 300, 350, 400, 450, 500];
+const EARLY_MILESTONES_SILK_ROADS = [10, 25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 
-export function getNextUpgradeMilestone(count: number): number {
-  for (const m of EARLY_MILESTONES) {
+export function getNextUpgradeMilestone(count: number, hasSilkRoads: boolean = false): number {
+  const list = hasSilkRoads ? EARLY_MILESTONES_SILK_ROADS : EARLY_MILESTONES_BASE;
+  for (const m of list) {
     if (count < m) return m;
   }
   return Math.ceil((count + 1) / 50) * 50;

@@ -23,6 +23,7 @@ import {
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/constants/colors";
 import { MILESTONE_CATEGORIES, Milestone } from "@/data/milestones";
 import { useGame } from "@/context/GameContext";
+import { useSettings } from "@/context/SettingsContext";
 
 interface Props {
   visible: boolean;
@@ -55,6 +56,7 @@ function ListSeparator() {
 
 export default function AchievementsModal({ visible, onClose }: Props) {
   const { state } = useGame();
+  const { settings } = useSettings();
   const insets = useSafeAreaInsets();
   const topPad = Math.max(insets.top, Platform.OS === "web" ? 12 : 20);
   const bottomPad = Math.max(insets.bottom, 16);
@@ -84,8 +86,9 @@ export default function AchievementsModal({ visible, onClose }: Props) {
     if (!activeCat) return [];
     return activeCat.milestones
       .map((m) => ({ m, unlocked: triggeredSet.has(m.id) }))
+      .filter((r) => !(settings.hideAcquiredAchievements && r.unlocked))
       .sort((a, b) => Number(b.unlocked) - Number(a.unlocked));
-  }, [activeCat, triggeredSet]);
+  }, [activeCat, triggeredSet, settings.hideAcquiredAchievements]);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent={false}>
