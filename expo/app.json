@@ -19,7 +19,8 @@
       "bundleIdentifier": "com.jeremy.realmsrise",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
