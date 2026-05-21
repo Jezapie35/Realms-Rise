@@ -6,7 +6,9 @@
     "start": "bunx rork start -p p6g1o13c5vosg3hrjw9tv --tunnel",
     "start-web": "bunx rork start -p p6g1o13c5vosg3hrjw9tv --web --tunnel",
     "start-web-dev": "DEBUG=expo* bunx rork start -p p6g1o13c5vosg3hrjw9tv --web --tunnel",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -49,6 +51,7 @@
     "@expo/cli": "54.0.18",
     "@expo/ngrok": "^4.1.0",
     "@types/react": "~19.1.10",
+    "eas-cli": "^19.0.5",
     "eslint": "^9.31.0",
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
