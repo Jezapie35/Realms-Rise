@@ -136,14 +136,17 @@ export function purchaseRemoveAds(): Promise<boolean> {
 
     errorSub = iapLib.purchaseErrorListener((err: any) => {
       settle(() => {
-        if (err?.code === 'E_USER_CANCELLED') resolve(false);
+        if (err?.code === 'user-cancelled') resolve(false);
         else reject(new Error(err?.message ?? 'Purchase failed'));
       });
     });
 
-    iapLib.requestPurchase({ sku: IAP_PRODUCT_ID }).catch((err: any) => {
+    iapLib.requestPurchase({
+      request: { apple: { sku: IAP_PRODUCT_ID } },
+      type: 'in-app',
+    }).catch((err: any) => {
       settle(() => {
-        if (err?.code === 'E_USER_CANCELLED') resolve(false);
+        if (err?.code === 'user-cancelled') resolve(false);
         else reject(new Error(err?.message ?? 'Purchase failed'));
       });
     });

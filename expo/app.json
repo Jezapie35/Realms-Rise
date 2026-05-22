@@ -42,7 +42,8 @@
           "androidAppId": "ca-app-pub-4095824401302732~3203914262",
           "iosAppId": "ca-app-pub-4095824401302732~3203914262"
         }
-      ]
+      ],
+      "react-native-iap"
     ],
     "experiments": {
       "typedRoutes": true
