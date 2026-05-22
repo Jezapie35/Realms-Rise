@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowLeft,
+  Award,
   Check,
   Coins,
   Crown,
@@ -19,6 +20,7 @@ import {
   Star,
   Trophy,
   X,
+  Zap,
 } from "lucide-react-native";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/constants/colors";
 import { MILESTONE_CATEGORIES, Milestone } from "@/data/milestones";
@@ -31,17 +33,21 @@ interface Props {
 }
 
 const CATEGORY_ICONS = {
-  wealth:  Coins,
-  kingdom: Crown,
-  power:   Shield,
-  glory:   Star,
+  wealth:    Coins,
+  kingdom:   Crown,
+  power:     Shield,
+  glory:     Star,
+  ascension: Zap,
+  trials:    Award,
 };
 
 const CATEGORY_COLORS = {
-  wealth:  "#d4a430",
-  kingdom: "#7a8ab0",
-  power:   "#aa4444",
-  glory:   "#7a4aaa",
+  wealth:    "#d4a430",
+  kingdom:   "#7a8ab0",
+  power:     "#aa4444",
+  glory:     "#7a4aaa",
+  ascension: "#f5c842",
+  trials:    "#cc9a20",
 };
 
 type CategoryId = keyof typeof CATEGORY_COLORS;

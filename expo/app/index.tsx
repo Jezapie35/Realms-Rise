@@ -11,7 +11,11 @@ import { formatGold } from "@/utils/formatNumber";
 import TopPanel from "@/components/TopPanel";
 import UpgradeStrip from "@/components/UpgradeStrip";
 import BuildingRow from "@/components/BuildingRow";
+import ChallengeBanner from "@/components/ChallengeBanner";
+import EdictTray from "@/components/EdictTray";
 import PrestigeModal from "@/components/PrestigeModal";
+import AscensionModal from "@/components/AscensionModal";
+import CrownShopSheet from "@/components/CrownShopSheet";
 import SettingsModal from "@/components/SettingsModal";
 import AchievementsModal from "@/components/AchievementsModal";
 import SkillTreeSheet from "@/components/SkillTreeSheet";
@@ -34,15 +38,21 @@ export default function MainScreen() {
     buyBuilding,
     declareSovereignty,
     startNewKingdom,
+    startChallengeRun,
+    executeAscension,
     prestigeReward,
     hardReset,
   } = useGame();
+
   const [showPrestige, setShowPrestige] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showSkillTree, setShowSkillTree] = useState<boolean>(false);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
+  const [showAscension, setShowAscension] = useState<boolean>(false);
+  const [showCrownShop, setShowCrownShop] = useState<boolean>(false);
 
   const inLegacyShop = state.prestigePhase === "legacy_shop";
+  const showAscensionButton = state.prestigeCount >= 20;
 
   useEffect(() => {
     if (inLegacyShop) setShowSkillTree(true);
@@ -125,6 +135,15 @@ export default function MainScreen() {
           end={{ x: 1, y: 0.5 }}
           style={styles.headerRule}
         />
+        {showAscensionButton && (
+          <Pressable
+            onPress={() => setShowAscension(true)}
+            style={styles.settingsBtn}
+            testID="ascension-btn"
+          >
+            <Text style={styles.crownEmoji}>♛</Text>
+          </Pressable>
+        )}
         <Pressable
           onPress={() => setShowAchievements(true)}
           style={styles.settingsBtn}
@@ -142,6 +161,8 @@ export default function MainScreen() {
       </View>
 
       <TopPanel />
+      <ChallengeBanner />
+
       <UpgradeStrip />
 
       {/* Buy mode */}
@@ -160,6 +181,8 @@ export default function MainScreen() {
         ))}
       </View>
 
+      <EdictTray />
+
       <FlatList
         data={buildingData}
         keyExtractor={(item) => item.b.id}
@@ -177,6 +200,26 @@ export default function MainScreen() {
           declareSovereignty(carryOverId);
         }}
         onCancel={() => setShowPrestige(false)}
+        onStartChallenge={(challengeId, selectedBuilding) => {
+          setShowPrestige(false);
+          startChallengeRun(challengeId, selectedBuilding);
+        }}
+      />
+      <AscensionModal
+        visible={showAscension}
+        onAscend={() => {
+          setShowAscension(false);
+          executeAscension();
+        }}
+        onViewShop={() => {
+          setShowAscension(false);
+          setShowCrownShop(true);
+        }}
+        onClose={() => setShowAscension(false)}
+      />
+      <CrownShopSheet
+        visible={showCrownShop}
+        onClose={() => setShowCrownShop(false)}
       />
       <SettingsModal
         visible={showSettings}
@@ -265,6 +308,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  crownEmoji: {
+    color: COLORS.textGold,
+    fontSize: 22,
+  },
   buyModeRow: {
     flexDirection: "row",
     height: 40,
@@ -346,5 +393,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-
 });

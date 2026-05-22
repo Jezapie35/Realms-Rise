@@ -1,13 +1,23 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { RotateCcw } from "lucide-react-native";
 import { COLORS, FONTS, RADIUS } from "@/constants/colors";
 import { HapticStrength, useSettings } from "@/context/SettingsContext";
+import { useGame } from "@/context/GameContext";
 import {
   isRemoveAdsPurchased,
   purchaseRemoveAds,
   restorePurchases,
 } from "@/services/monetisation";
+
+const DEBUG_AMOUNTS = [
+  { label: "1K",   value: 1_000 },
+  { label: "1M",   value: 1_000_000 },
+  { label: "1B",   value: 1_000_000_000 },
+  { label: "100B", value: 100_000_000_000 },
+  { label: "1T",   value: 1_000_000_000_000 },
+  { label: "1aa",  value: 1e21 },
+];
 
 interface Props {
   visible: boolean;
@@ -32,7 +42,18 @@ export default function SettingsModal({ visible, onClose, onHardReset }: Props) 
   const [confirm, setConfirm] = useState<number>(0);
   const [adsRemoved, setAdsRemoved] = useState(false);
   const [iapLoading, setIapLoading] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const [customGold, setCustomGold] = useState("");
   const { settings, setStrength, toggleEvent, setHideAcquiredAchievements } = useSettings();
+  const { debugAddGold, state } = useGame();
+
+  const handleCustomGold = () => {
+    const val = parseFloat(customGold.replace(/,/g, ""));
+    if (!isNaN(val) && val > 0) {
+      debugAddGold(val);
+      setCustomGold("");
+    }
+  };
 
   useEffect(() => {
     if (visible) {
@@ -139,6 +160,59 @@ export default function SettingsModal({ visible, onClose, onHardReset }: Props) 
                 );
               })}
             </View>
+
+            <View style={styles.divider} />
+
+            {/* Testing Panel */}
+            <Pressable
+              onPress={() => setShowDebug(!showDebug)}
+              style={({ pressed }) => [styles.debugEntryBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={styles.debugEntryText}>
+                {showDebug ? "Hide Testing Panel ▲" : "Testing Panel ▼"}
+              </Text>
+            </Pressable>
+
+            {showDebug && (
+              <View style={styles.debugPanel}>
+                <Text style={styles.debugGold}>
+                  Gold: <Text style={{ color: COLORS.textGold }}>{state.gold.toLocaleString()}</Text>
+                  {"  ·  "}Prestiges: <Text style={{ color: COLORS.textGold }}>{state.prestigeCount}</Text>
+                  {"  ·  "}Crowns: <Text style={{ color: COLORS.textGold }}>{state.ascension?.crowns ?? 0}</Text>
+                </Text>
+                <Text style={styles.subLabel}>Quick Add Gold</Text>
+                <View style={styles.debugRow}>
+                  {DEBUG_AMOUNTS.map(({ label, value }) => (
+                    <Pressable
+                      key={label}
+                      onPress={() => debugAddGold(value)}
+                      style={({ pressed }) => [styles.debugBtn, pressed && { opacity: 0.6 }]}
+                    >
+                      <Text style={styles.debugBtnText}>+{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Text style={styles.subLabel}>Custom Amount</Text>
+                <View style={styles.customRow}>
+                  <TextInput
+                    style={styles.input}
+                    value={customGold}
+                    onChangeText={setCustomGold}
+                    placeholder="e.g. 500000"
+                    placeholderTextColor={COLORS.textDim}
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                    onSubmitEditing={handleCustomGold}
+                  />
+                  <Pressable
+                    onPress={handleCustomGold}
+                    style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.6 }]}
+                  >
+                    <Text style={styles.addBtnText}>Add</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
 
             <View style={styles.divider} />
 
@@ -378,4 +452,66 @@ const styles = StyleSheet.create({
   resetBtnTextWarn: { color: "#ffdede" },
   closeBtn: { marginTop: 4, alignItems: "center", paddingVertical: 10 },
   closeBtnText: { color: COLORS.textPrimary, fontFamily: FONTS.serif, fontSize: 14 },
+  debugEntryBtn: {
+    backgroundColor: COLORS.bg4,
+    borderWidth: 1,
+    borderColor: "#aa00ff",
+    borderRadius: RADIUS.md,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  debugEntryText: {
+    color: "#cc66ff",
+    fontFamily: FONTS.serif,
+    fontWeight: "800",
+    fontSize: 14,
+  },
+  debugPanel: {
+    backgroundColor: COLORS.bg2,
+    borderWidth: 1,
+    borderColor: "#aa00ff",
+    borderRadius: RADIUS.md,
+    padding: 12,
+    gap: 8,
+  },
+  debugGold: {
+    color: COLORS.textDim,
+    fontFamily: FONTS.system,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  debugRow: { flexDirection: "row", gap: 6, flexWrap: "wrap" },
+  debugBtn: {
+    flex: 1,
+    backgroundColor: COLORS.bg4,
+    borderWidth: 1,
+    borderColor: "#aa00ff",
+    borderRadius: RADIUS.md,
+    paddingVertical: 8,
+    alignItems: "center",
+    minWidth: 48,
+  },
+  debugBtnText: { color: "#cc66ff", fontFamily: FONTS.serif, fontWeight: "800", fontSize: 13 },
+  customRow: { flexDirection: "row", gap: 8 },
+  input: {
+    flex: 1,
+    backgroundColor: COLORS.bg4,
+    borderWidth: 1,
+    borderColor: COLORS.bg5,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.system,
+    fontSize: 14,
+  },
+  addBtn: {
+    backgroundColor: "#2d0050",
+    borderWidth: 1,
+    borderColor: "#aa00ff",
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 20,
+    justifyContent: "center",
+  },
+  addBtnText: { color: "#cc66ff", fontFamily: FONTS.serif, fontWeight: "800", fontSize: 14 },
 });

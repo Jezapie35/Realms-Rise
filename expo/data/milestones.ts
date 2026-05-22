@@ -372,8 +372,47 @@ const SPECIAL_MILESTONES: Milestone[] = [
   },
 ];
 
+// ── Extended wealth milestones (septillion → decillion) ───────────────────────
+const EXTENDED_WEALTH_MILESTONES: Milestone[] = [
+  { id: "gold_1sep",   title: "Beyond the Veil",      desc: "1 septillion gold earned.",           important: true,  check: (s) => s.totalGoldEarned >= 1e24 },
+  { id: "gold_10sep",  title: "The Endless Coffers",  desc: "10 septillion gold earned.",                            check: (s) => s.totalGoldEarned >= 1e25 },
+  { id: "gold_100sep", title: "Realm Without Limit",  desc: "100 septillion gold earned.",                           check: (s) => s.totalGoldEarned >= 1e26 },
+  { id: "gold_1oct",   title: "The Second Horizon",   desc: "1 octillion gold earned.",            important: true,  check: (s) => s.totalGoldEarned >= 1e27 },
+  { id: "gold_10oct",  title: "Eternity's Ledger",    desc: "10 octillion gold earned.",                             check: (s) => s.totalGoldEarned >= 1e28 },
+  { id: "gold_100oct", title: "The Grand Infinite",   desc: "100 octillion gold earned.",                            check: (s) => s.totalGoldEarned >= 1e29 },
+  { id: "gold_1non",   title: "The Sovereign Age",    desc: "1 nonillion gold earned.",            important: true,  check: (s) => s.totalGoldEarned >= 1e30 },
+  { id: "gold_1dec",   title: "Godking's Treasury",   desc: "1 decillion gold. You are a god.",    important: true,  check: (s) => s.totalGoldEarned >= 1e33 },
+];
+
+// ── Extended prestige milestones ──────────────────────────────────────────────
+const EXTENDED_PRESTIGE_MILESTONES: Milestone[] = [
+  { id: "p_75",   title: "The Seasoned Sovereign",        desc: "Seventy-five kingdoms risen.",                    check: (s) => s.prestigeCount >= 75  },
+  { id: "p_150",  title: "The Undying",                   desc: "One hundred and fifty sovereignties.",            check: (s) => s.prestigeCount >= 150 },
+  { id: "p_200",  title: "Beyond Mortality",              desc: "Two hundred kingdoms. You cannot be stopped.",    check: (s) => s.prestigeCount >= 200 },
+];
+
+// ── Ascension milestones ──────────────────────────────────────────────────────
+const ASCENSION_MILESTONES: Milestone[] = [
+  { id: "a_first", title: "The Crowned Rebirth",    desc: "Ascend for the first time.",                 important: true, check: (s) => (s.ascension?.count ?? 0) >= 1  },
+  { id: "a_3",     title: "The Triumvirate",        desc: "Three ascensions completed.",                              check: (s) => (s.ascension?.count ?? 0) >= 3  },
+  { id: "a_5",     title: "Dynasty of Dynasties",   desc: "Five ascensions completed.",                 important: true, check: (s) => (s.ascension?.count ?? 0) >= 5  },
+  { id: "a_10",    title: "The Eternal Sovereign",  desc: "Ten ascensions. An immortal name.",          important: true, check: (s) => (s.ascension?.count ?? 0) >= 10 },
+  { id: "a_20",    title: "Blood of Ascendants",    desc: "Twenty ascensions. Blood of Ascendants.",   important: true, check: (s) => (s.ascension?.count ?? 0) >= 20 },
+];
+
+// ── Challenge / Trials milestones ─────────────────────────────────────────────
+const TRIALS_MILESTONES: Milestone[] = [
+  { id: "ch_m_first",     title: "The Trial Begins",    desc: "Complete your first challenge run.",                    important: true, check: (s) => (s.challenges?.completed?.length ?? 0) >= 1   },
+  { id: "ch_m_first_leg", title: "Against All Odds",    desc: "Complete a legendary challenge run.",                  important: true, check: (s) => (s.challenges?.completed ?? []).some((id) => ["ch_plague","ch_entropy","ch_forsaken","ch_one","ch_siege"].includes(id)) },
+  { id: "ch_m_all_once",  title: "The Grand Ordeal",    desc: "Complete all 12 challenge types at least once.",                        check: (s) => new Set(s.challenges?.completed ?? []).size >= 12 },
+  { id: "ch_m_5gold",     title: "The Unbroken King",   desc: "Earn 5 gold medals.",                                                   check: (s) => Object.values(s.challenges?.medals ?? {}).filter((m) => m === "gold").length >= 5  },
+  { id: "ch_m_all_gold",  title: "Realm Unconquered",   desc: "Earn gold medals on all 12 challenges.",              important: true, check: (s) => Object.values(s.challenges?.medals ?? {}).filter((m) => m === "gold").length >= 12 },
+  { id: "ch_m_25total",   title: "The Eternal Trial",   desc: "Complete 25 total challenge runs.",                                     check: (s) => (s.challenges?.completed?.length ?? 0) >= 25  },
+];
+
 export const MILESTONES: Milestone[] = [
   ...GOLD_MILESTONES,
+  ...EXTENDED_WEALTH_MILESTONES,
   ...CURRENT_GOLD_MILESTONES,
   ...GPS_MILESTONES,
   ...CLICK_MILESTONES,
@@ -382,11 +421,14 @@ export const MILESTONES: Milestone[] = [
   ...BUILDING_MILESTONES,
   ...DIVERSITY_MILESTONES,
   ...PRESTIGE_MILESTONES,
+  ...EXTENDED_PRESTIGE_MILESTONES,
   ...SEAL_MILESTONES,
   ...COIN_MILESTONES,
   ...SKILL_MILESTONES,
   ...LEGACY_MILESTONES,
   ...SPECIAL_MILESTONES,
+  ...ASCENSION_MILESTONES,
+  ...TRIALS_MILESTONES,
 ];
 
 export interface MilestoneCategory {
@@ -399,7 +441,7 @@ export const MILESTONE_CATEGORIES: MilestoneCategory[] = [
   {
     id: "wealth",
     label: "Wealth",
-    milestones: [...GOLD_MILESTONES, ...CURRENT_GOLD_MILESTONES, ...GPS_MILESTONES],
+    milestones: [...GOLD_MILESTONES, ...EXTENDED_WEALTH_MILESTONES, ...CURRENT_GOLD_MILESTONES, ...GPS_MILESTONES],
   },
   {
     id: "kingdom",
@@ -417,6 +459,7 @@ export const MILESTONE_CATEGORIES: MilestoneCategory[] = [
     label: "Power",
     milestones: [
       ...PRESTIGE_MILESTONES,
+      ...EXTENDED_PRESTIGE_MILESTONES,
       ...SEAL_MILESTONES,
       ...SKILL_MILESTONES,
       ...LEGACY_MILESTONES,
@@ -426,5 +469,15 @@ export const MILESTONE_CATEGORIES: MilestoneCategory[] = [
     id: "glory",
     label: "Glory",
     milestones: [...COIN_MILESTONES, ...SPECIAL_MILESTONES],
+  },
+  {
+    id: "ascension",
+    label: "Ascension",
+    milestones: [...ASCENSION_MILESTONES],
+  },
+  {
+    id: "trials",
+    label: "Trials",
+    milestones: [...TRIALS_MILESTONES],
   },
 ];

@@ -11,6 +11,8 @@ import {
   BuyMode,
   ActiveBonus,
   SAVE_VERSION,
+  DEFAULT_CHALLENGE_STATE,
+  ChallengeState,
 } from "@/data/gameState";
 import {
   applyOfflineProgress,
@@ -26,6 +28,25 @@ import { MILESTONES } from "@/data/milestones";
 import { deleteSave, loadGame, saveGame } from "@/data/saveSystem";
 import { formatGold } from "@/utils/formatNumber";
 import { LEGACY_BY_ID, LEGACY_UPGRADES, calculateLegacyBonuses } from "@/data/legacyUpgrades";
+import {
+  getAscensionRequirements,
+  buildPostAscensionState,
+  calculateCrownsEarned,
+  getCrownStartGold,
+  getCrownCoinSpawnInterval,
+  CROWN_BY_ID,
+} from "@/data/ascension";
+import {
+  CHALLENGE_BY_ID,
+  isChallengeUnlocked,
+  evaluateMedal,
+  GOLD_MEDAL_BONUSES,
+  pickPlagueEvent,
+  getLowestGPSBuilding,
+  getAusterityProgress,
+  EDICT_BY_ID,
+  MAX_EDICTS,
+} from "@/data/challenges";
 
 interface Toast {
   id: number;
@@ -48,14 +69,50 @@ function capGold(n: number): number {
   return n;
 }
 
-function coinInterval(unlocked: string[]): { min: number; max: number } {
+// ─── Plague event application ─────────────────────────────────────────────────
+function applyPlagueEvent(
+  state: GameState,
+  eventId: string,
+  now: number,
+): Partial<GameState & { challenges: ChallengeState }> {
+  const ch = { ...state.challenges };
+  let gold = state.gold;
+  switch (eventId) {
+    case "rats": {
+      const building = getLowestGPSBuilding(state);
+      if (building) {
+        ch.ratInfestationBuilding = building;
+        ch.ratInfestationExpiry = now + 120_000;
+      }
+      break;
+    }
+    case "fever":
+      ch.plagueRecovery = Math.max(0.05, ch.plagueRecovery - 0.10);
+      break;
+    case "gravediggers":
+      ch.tempCostMultiplier = 1.25;
+      ch.tempCostMultiplierExpiry = now + 90_000;
+      break;
+    case "exodus":
+      gold = capGold(gold * 0.92);
+      break;
+  }
+  return { challenges: ch, gold };
+}
+
+function coinInterval(state: GameState): { min: number; max: number } {
+  const unlocked = state.unlockedSkillNodes;
+  // Siege challenge: coins spawn frequently
+  if (state.challenges.active === "ch_siege") return { min: 15_000, max: 15_000 };
+  // Crown: The Crowned Age — 30s guaranteed
+  if (state.ascension?.crownUpgrades?.includes("crown_crowned_age")) return { min: 30_000, max: 30_000 };
   if (unlocked.includes("pinnacle")) return { min: 30_000, max: 30_000 };
   if (unlocked.includes("military_3b")) return { min: 30_000, max: 270_000 };
   return { min: 60_000, max: 600_000 };
 }
 
-function nextCoinTime(now: number, unlocked: string[]): number {
-  const { min, max } = coinInterval(unlocked);
+function nextCoinTime(now: number, state: GameState): number {
+  const { min, max } = coinInterval(state);
   return now + min + Math.random() * (max - min);
 }
 
@@ -121,7 +178,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         migrated.lastInterestTick = now;
         if (migrated.activeBonus && now >= migrated.activeBonus.expiresAt) migrated.activeBonus = null;
         if (!migrated.nextGoldenCoinTime || migrated.nextGoldenCoinTime < now) {
-          migrated.nextGoldenCoinTime = nextCoinTime(now, migrated.unlockedSkillNodes);
+          migrated.nextGoldenCoinTime = nextCoinTime(now, migrated);
         }
         // Apply carry-over upgrade (Holy Order)
         if (migrated.carryOverUpgrade && !migrated.purchasedUpgrades.includes(migrated.carryOverUpgrade)) {
@@ -157,13 +214,13 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         gold += earned;
         totalGoldEarned += earned;
 
-        // Banking House — 0.5% of current gold per minute
+        // Banking House — 0.3% of current gold per minute
         let lastInterestTick = prev.lastInterestTick;
         if (prev.unlockedSkillNodes.includes("commerce_3a")) {
           const dt = now - prev.lastInterestTick;
           if (dt > 1000) {
             const minutes = dt / 60000;
-            const interest = gold * 0.005 * minutes;
+            const interest = gold * 0.003 * minutes;
             gold += interest;
             totalGoldEarned += interest;
             lastInterestTick = now;
@@ -171,6 +228,81 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         } else {
           lastInterestTick = now;
         }
+
+        // ── Challenge ticks ──────────────────────────────────────────────────
+        let challenges = { ...prev.challenges };
+        const activeChallenge = challenges.active;
+
+        // Plague: recovery ticks + events
+        if (activeChallenge === "ch_plague") {
+          const recoveryPerSecond = 0.003 / 60;
+          challenges.plagueRecovery = Math.min(
+            1.0,
+            challenges.plagueRecovery + recoveryPerSecond * elapsed,
+          );
+          if (
+            challenges.lastPlagueEventTime === 0 ||
+            now - challenges.lastPlagueEventTime >= 180_000
+          ) {
+            if (challenges.lastPlagueEventTime > 0) {
+              const event = pickPlagueEvent();
+              const result = applyPlagueEvent(
+                { ...prev, gold, challenges },
+                event.id,
+                now,
+              );
+              if (result.gold !== undefined) gold = result.gold;
+              if (result.challenges) challenges = result.challenges;
+              needsRecalc = true;
+              pushToast(`⚠ ${event.label}`, event.description, "info");
+            }
+            challenges.lastPlagueEventTime = now;
+          }
+        }
+
+        // Entropy: decay accelerates over time
+        if (activeChallenge === "ch_entropy" && !challenges.entropyCollapsed) {
+          const deltaMinutes = elapsed / 60;
+          challenges.entropyDecayRate += 0.005 * deltaMinutes;
+          challenges.entropyDecay *= Math.pow(
+            1 - challenges.entropyDecayRate,
+            deltaMinutes,
+          );
+          challenges.entropyDecay = Math.max(0.05, challenges.entropyDecay);
+          needsRecalc = true;
+
+          if (challenges.entropyDecay <= 0.10) {
+            // Entropy collapse: reset buildings and redistribute
+            challenges.entropyCollapsed = true;
+            needsRecalc = true;
+            pushToast("⚡ ENTROPY COLLAPSE", "Your buildings scatter to the winds.", "info");
+          }
+        }
+
+        // Taxed: drain 5% of gold every 60 seconds
+        if (activeChallenge === "ch_taxed") {
+          if (now - challenges.lastTaxedDrainTime >= 60_000) {
+            gold = capGold(gold * 0.95);
+            challenges.lastTaxedDrainTime = now;
+          }
+        }
+
+        // Austerity: check unlock threshold
+        if (activeChallenge === "ch_austerity" && !challenges.austerityUnlocked) {
+          const { locked } = getAusterityProgress({ ...prev, totalGPS: prev.totalGPS });
+          if (!locked) {
+            challenges.austerityUnlocked = true;
+            pushToast("Austerity Lifted", "Upgrades are now available.", "success");
+          }
+        }
+
+        // Track lifetime gold for ascension gate
+        const ascension = {
+          ...prev.ascension,
+          lifetimeGoldThisAscension: capGold(
+            (prev.ascension?.lifetimeGoldThisAscension ?? 0) + earned,
+          ),
+        };
 
         gold = capGold(gold);
         totalGoldEarned = capGold(totalGoldEarned);
@@ -209,11 +341,17 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
           ...prev,
           gold,
           totalGoldEarned,
+          lifetimeGoldAllTime: capGold(
+            (prev.lifetimeGoldAllTime ?? 0) + earned,
+          ),
           activeBonus,
+          edictBoosts: (prev.edictBoosts ?? []).filter((b) => now < b.expiresAt),
           lastTimestamp: now,
           lastInterestTick,
           nextGoldenCoinTime: nextCoin,
           triggeredMilestones: triggered,
+          challenges,
+          ascension,
         };
         return needsRecalc ? recalc(base, now) : base;
       });
@@ -272,6 +410,13 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
     (buildingId: string, quantity: number | "max") => {
       setState((prev) => {
         if (prev.prestigePhase === "legacy_shop") return prev;
+        // Challenge: One Building — block other buildings
+        if (
+          prev.challenges.active === "ch_one" &&
+          prev.challenges.activeChallengeBuilding &&
+          buildingId !== prev.challenges.activeChallengeBuilding
+        ) return prev;
+
         let gold = prev.gold;
         let count = prev.buildings[buildingId]?.count ?? 0;
         let bought = 0;
@@ -280,7 +425,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
             ? calculateBuyMaxCount(buildingId, gold, count, prev.unlockedSkillNodes, prev.purchasedUpgrades, prev.legacyUpgrades)
             : quantity;
         for (let i = 0; i < qty; i++) {
-          const cost = calculateBuildingCost(buildingId, count, prev.unlockedSkillNodes, prev.purchasedUpgrades, prev.legacyUpgrades);
+          const cost = calculateBuildingCost(buildingId, count, prev.unlockedSkillNodes, prev.purchasedUpgrades, prev.legacyUpgrades, prev);
           if (gold < cost) break;
           gold -= cost;
           count += 1;
@@ -288,10 +433,21 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         }
         if (bought === 0) return prev;
         hapticPurchase();
+
+        // Plague: chance to spread on purchase
+        let challenges = prev.challenges;
+        if (prev.challenges.active === "ch_plague" && Math.random() < 0.15) {
+          challenges = {
+            ...challenges,
+            plagueRecovery: Math.max(0.05, challenges.plagueRecovery - 0.05),
+          };
+        }
+
         const next: GameState = {
           ...prev,
           gold,
           buildings: { ...prev.buildings, [buildingId]: { count } },
+          challenges,
         };
         return recalc(next);
       });
@@ -306,11 +462,16 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         if (prev.purchasedUpgrades.includes(upgradeId)) return prev;
         const u = UPGRADE_BY_ID[upgradeId];
         if (!u) return prev;
-        if (prev.gold < u.cost) return prev;
+        // Challenge: Austerity — upgrades locked until GPS threshold
+        if (prev.challenges.active === "ch_austerity" && !prev.challenges.austerityUnlocked) return prev;
+        // Edict: King's Word — next upgrade is free
+        const isFree = prev.challenges.freeNextUpgrade;
+        if (!isFree && prev.gold < u.cost) return prev;
         const next: GameState = {
           ...prev,
-          gold: prev.gold - u.cost,
+          gold: isFree ? prev.gold : prev.gold - u.cost,
           purchasedUpgrades: [...prev.purchasedUpgrades, upgradeId],
+          challenges: { ...prev.challenges, freeNextUpgrade: false },
         };
         hapticPurchase();
         pushToast("Upgrade Acquired", u.name, "success");
@@ -371,10 +532,63 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         const reward = calculatePrestigeSeals(prev);
         if (reward <= 0) return prev;
         const now = Date.now();
-        const carryOver =
-          prev.unlockedSkillNodes.includes("faith_3a") && carryOverUpgradeId
-            ? carryOverUpgradeId
-            : null;
+
+        // Holy Order: how many carry-overs allowed
+        const holyOrderActive = prev.unlockedSkillNodes.includes("faith_3a");
+        const maxCarryOver = holyOrderActive
+          ? (prev.ascension.crownUpgrades.includes("crown_undying_realm") ? 3 : 1)
+          : 0;
+        const carryOverUpgrades: string[] = [];
+        if (holyOrderActive && carryOverUpgradeId) {
+          carryOverUpgrades.push(carryOverUpgradeId);
+        }
+
+        // Challenge completion
+        let challenges = { ...prev.challenges };
+        if (challenges.active && challenges.activeStartTime) {
+          const elapsedSeconds = (now - challenges.activeStartTime) / 1000;
+          const medal = evaluateMedal(elapsedSeconds);
+          const challengeId = challenges.active;
+          const existingMedal = challenges.medals[challengeId];
+          const medalRank: Record<string, number> = { bronze: 1, silver: 2, gold: 3 };
+          const shouldUpgrade = !existingMedal || (medalRank[medal] ?? 0) > (medalRank[existingMedal] ?? 0);
+
+          if (shouldUpgrade) {
+            challenges = {
+              ...challenges,
+              medals: { ...challenges.medals, [challengeId]: medal },
+              completed: [...challenges.completed, challengeId],
+            };
+            if (medal === "gold") {
+              const bonus = GOLD_MEDAL_BONUSES[challengeId];
+              pushToast(
+                "🥇 Gold Medal!",
+                bonus ? bonus.description : `Gold on ${challengeId}`,
+                "success",
+              );
+            } else {
+              pushToast(
+                medal === "silver" ? "🥈 Silver Medal" : "🥉 Bronze Medal",
+                `Challenge completed: ${CHALLENGE_BY_ID[challengeId]?.name ?? challengeId}`,
+                "success",
+              );
+            }
+          } else {
+            challenges.completed = [...challenges.completed, challengeId];
+          }
+          // Grant an edict for completing any challenge
+          if (challenges.edicts.length < MAX_EDICTS) {
+            const edictIds = ["royal_decree", "war_chest", "kings_word", "conscription", "golden_harvest"];
+            challenges.edicts = [
+              ...challenges.edicts,
+              edictIds[Math.floor(Math.random() * edictIds.length)],
+            ];
+          }
+          challenges.active = null;
+          challenges.activeStartTime = null;
+          challenges.activeTier = null;
+        }
+
         const next: GameState = {
           ...prev,
           gold: 0,
@@ -382,9 +596,11 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
           sealsAvailable: prev.sealsAvailable + reward,
           sealsTotal: prev.sealsTotal + reward,
           prestigePhase: "legacy_shop",
-          carryOverUpgrade: carryOver,
+          carryOverUpgrade: carryOverUpgrades[0] ?? null,
+          carryOverUpgrades,
           lastRunGps: prev.totalGPS,
           lastTimestamp: now,
+          challenges,
         };
         pushToast(
           "Sovereignty Declared!",
@@ -409,15 +625,19 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         prev.lifetimeClicks ?? 0,
         prev.lastRunGps,
       );
-      const skillStartGold = prev.unlockedSkillNodes.includes("lineage_1") ? 100 : 0;
-      const startGold = skillStartGold + legacy.startingGold;
+      const skillStartGold = prev.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
+      const crownStartGold = getCrownStartGold(prev);
+      const startGold = skillStartGold + legacy.startingGold + crownStartGold;
       const buildings: Record<string, { count: number }> = {};
       for (const b of BUILDINGS) buildings[b.id] = { count: 0 };
 
-      let purchasedUpgrades: string[] = [];
-      if (prev.carryOverUpgrade) {
-        purchasedUpgrades = [prev.carryOverUpgrade];
-      }
+      // Holy Order carry-overs (single or multi with crown)
+      const purchasedUpgrades: string[] = [
+        ...(prev.carryOverUpgrades ?? []),
+        ...(prev.carryOverUpgrade && !prev.carryOverUpgrades?.includes(prev.carryOverUpgrade)
+          ? [prev.carryOverUpgrade]
+          : []),
+      ].filter(Boolean);
 
       const fresh: GameState = {
         ...prev,
@@ -426,17 +646,195 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         buildings,
         purchasedUpgrades,
         activeBonus: null,
+        edictBoosts: [],
         carryOverUpgrade: null,
+        carryOverUpgrades: [],
         prestigePhase: "playing",
         lastTimestamp: now,
         runStartTime: now,
         lastInterestTick: now,
+        nextGoldenCoinTime: nextCoinTime(now, prev),
         // NOTE: triggeredMilestones is intentionally NOT reset — achievements persist across prestiges
       };
       pushToast("A New Kingdom Rises", "Your legacy powers are now active.", "success");
       return recalc(fresh, now);
     });
   }, [pushToast, recalc]);
+
+  /** Start a challenge run — immediately begins new kingdom with challenge active. */
+  const startChallengeRun = useCallback(
+    (challengeId: string, selectedBuilding?: string | null) => {
+      setState((prev) => {
+        const challenge = CHALLENGE_BY_ID[challengeId];
+        if (!challenge) return prev;
+        if (!isChallengeUnlocked(challenge, prev)) return prev;
+
+        const now = Date.now();
+        const legacy = calculateLegacyBonuses(
+          prev.legacyUpgrades ?? [],
+          prev.sealsTotal,
+          prev.prestigeCount,
+          prev.lifetimeClicks ?? 0,
+          prev.lastRunGps,
+        );
+        const skillStartGold = prev.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
+        const crownStartGold = getCrownStartGold(prev);
+        const startGold = skillStartGold + legacy.startingGold + crownStartGold;
+
+        const buildings: Record<string, { count: number }> = {};
+        for (const b of BUILDINGS) buildings[b.id] = { count: 0 };
+
+        const challenges: ChallengeState = {
+          ...DEFAULT_CHALLENGE_STATE,
+          completed: prev.challenges.completed,
+          medals: prev.challenges.medals,
+          edicts: prev.challenges.edicts,
+          fragmentsEarned: prev.challenges.fragmentsEarned,
+          active: challengeId,
+          activeStartTime: now,
+          activeTier: challenge.tier,
+          activeChallengeBuilding: selectedBuilding ?? null,
+          plagueRecovery: challengeId === "ch_plague" ? 0.05 : 1.0,
+          lastPlagueEventTime: challengeId === "ch_plague" ? now : 0,
+          lastTaxedDrainTime: challengeId === "ch_taxed" ? now : 0,
+          entropyDecay: 1.0,
+          entropyDecayRate: 0.02,
+        };
+
+        const fresh: GameState = {
+          ...prev,
+          gold: startGold,
+          totalGoldEarned: startGold,
+          buildings,
+          purchasedUpgrades: [],
+          activeBonus: null,
+          edictBoosts: [],
+          carryOverUpgrade: null,
+          carryOverUpgrades: [],
+          prestigePhase: "playing",
+          lastTimestamp: now,
+          runStartTime: now,
+          lastInterestTick: now,
+          nextGoldenCoinTime: nextCoinTime(now, prev),
+          challenges,
+        };
+
+        pushToast(
+          `Challenge Run: ${challenge.name}`,
+          `${challenge.multiplier}× Seals on completion`,
+          "success",
+        );
+        return recalc(fresh, now);
+      });
+    },
+    [pushToast, recalc],
+  );
+
+  /** Execute ascension — the meta-prestige. */
+  const executeAscension = useCallback(() => {
+    setState((prev) => {
+      const req = getAscensionRequirements(prev);
+      if (!req.canAscend) return prev;
+      const crowns = calculateCrownsEarned(prev);
+      const fresh = createInitialState();
+      const post = buildPostAscensionState(prev, fresh);
+      pushToast(
+        "ASCENSION",
+        `+${crowns} Crown${crowns === 1 ? "" : "s"} — your dynasty endures.`,
+        "success",
+      );
+      return recalc(post);
+    });
+  }, [pushToast, recalc]);
+
+  /** Buy a Crown upgrade from the Crown Shop. */
+  const buyCrownUpgrade = useCallback(
+    (crownId: string) => {
+      setState((prev) => {
+        const upgrade = CROWN_BY_ID[crownId];
+        if (!upgrade) return prev;
+        if (prev.ascension.crownUpgrades.includes(crownId)) return prev;
+        if (prev.ascension.crowns < upgrade.cost) return prev;
+        if (upgrade.requiresAscension && prev.ascension.count < upgrade.requiresAscension) return prev;
+        for (const req of upgrade.requires) {
+          if (!prev.ascension.crownUpgrades.includes(req)) return prev;
+        }
+        const next: GameState = {
+          ...prev,
+          ascension: {
+            ...prev.ascension,
+            crowns: prev.ascension.crowns - upgrade.cost,
+            crownUpgrades: [...prev.ascension.crownUpgrades, crownId],
+          },
+        };
+        hapticSkill();
+        pushToast(upgrade.name, upgrade.description, "success");
+        return recalc(next);
+      });
+    },
+    [pushToast, recalc],
+  );
+
+  /** Use an edict from the player's inventory. */
+  const useEdict = useCallback(
+    (edictId: string) => {
+      setState((prev) => {
+        const idx = prev.challenges.edicts.indexOf(edictId);
+        if (idx === -1) return prev;
+        const now = Date.now();
+        const newEdicts = [...prev.challenges.edicts];
+        newEdicts.splice(idx, 1);
+        let gold = prev.gold;
+        let totalGoldEarned = prev.totalGoldEarned;
+        const edictBoosts = [...(prev.edictBoosts ?? [])];
+        let challenges = { ...prev.challenges, edicts: newEdicts };
+
+        switch (edictId) {
+          case "royal_decree":
+            edictBoosts.push({ type: "gps_boost", multiplier: 3, expiresAt: now + 300_000 });
+            pushToast("Royal Decree!", "×3 GPS for 5 minutes.", "bonus", "#f5c842");
+            break;
+          case "war_chest": {
+            const gain = prev.totalGPS * 600;
+            gold = capGold(gold + gain);
+            totalGoldEarned = capGold(totalGoldEarned + gain);
+            pushToast("War Chest!", `+${formatGold(gain)} gold`, "bonus", "#f5c842");
+            break;
+          }
+          case "kings_word":
+            challenges = { ...challenges, freeNextUpgrade: true };
+            pushToast("The King's Word", "Your next upgrade is free.", "bonus", "#f5c842");
+            break;
+          case "conscription":
+            edictBoosts.push({ type: "click_boost", multiplier: 2, expiresAt: now + 600_000 });
+            pushToast("Conscription!", "×2 click power for 10 minutes.", "bonus", "#f5c842");
+            break;
+          case "golden_harvest":
+            // Spawn coins is handled in the component layer; just toast here
+            pushToast("Golden Harvest!", "3 Golden Coins incoming.", "bonus", "#f5c842");
+            break;
+        }
+
+        const next: GameState = { ...prev, gold, totalGoldEarned, edictBoosts, challenges };
+        return edictId === "royal_decree" || edictId === "conscription" ? recalc(next, now) : next;
+      });
+    },
+    [pushToast, recalc],
+  );
+
+  /** Grant an edict to the player's inventory (called after challenge completion). */
+  const grantEdict = useCallback((edictId: string) => {
+    setState((prev) => {
+      if (prev.challenges.edicts.length >= MAX_EDICTS) return prev;
+      return {
+        ...prev,
+        challenges: {
+          ...prev.challenges,
+          edicts: [...prev.challenges.edicts, edictId],
+        },
+      };
+    });
+  }, []);
 
   const setBuyMode = useCallback((mode: BuyMode) => {
     setState((prev) => ({ ...prev, buyMode: mode }));
@@ -450,9 +848,20 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       let bonus: ActiveBonus | null = prev.activeBonus;
       let gold = prev.gold;
       let totalGoldEarned = prev.totalGoldEarned;
-      const coinMult = prev.unlockedSkillNodes.includes("faith_3b") ? 4 : 1;
+      let challenges = prev.challenges;
+
+      const coinMult = prev.unlockedSkillNodes.includes("faith_3b") ? 2 : 1;
       const treasureMult = prev.purchasedUpgrades.includes("coin_2") ? 2 : 1;
       const totalMult = coinMult * treasureMult;
+
+      // Siege challenge: collecting reduces intensity
+      if (prev.challenges.active === "ch_siege") {
+        challenges = {
+          ...challenges,
+          siegeIntensity: Math.max(0, challenges.siegeIntensity - 1),
+        };
+      }
+
       if (roll < 0.5) {
         const add = prev.totalGPS * 900 * totalMult;
         gold = capGold(gold + add);
@@ -471,11 +880,36 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         totalGoldEarned,
         activeBonus: bonus,
         goldenCoinsCollected: prev.goldenCoinsCollected + 1,
-        nextGoldenCoinTime: nextCoinTime(now, prev.unlockedSkillNodes),
+        nextGoldenCoinTime: nextCoinTime(now, prev),
+        challenges,
       };
       return recalc(next, now);
     });
   }, [recalc, showBanner]);
+
+  /** Called when a siege coin expires without being collected. */
+  const onSiegeCoinExpired = useCallback(() => {
+    setCoinVisible(false);
+    setState((prev) => {
+      if (prev.challenges.active !== "ch_siege") return prev;
+      const intensity = prev.challenges.siegeIntensity;
+      const drain = 0.20 + intensity * 0.05;
+      const now = Date.now();
+      const gold = capGold(prev.gold * (1 - drain));
+      const newIntensity = Math.min(10, intensity + 1);
+      showBanner(`Coin missed! ${(drain * 100).toFixed(0)}% gold lost.`, "#c0392b");
+      const next: GameState = {
+        ...prev,
+        gold,
+        challenges: {
+          ...prev.challenges,
+          siegeIntensity: newIntensity,
+        },
+        nextGoldenCoinTime: nextCoinTime(now, prev),
+      };
+      return next;
+    });
+  }, [showBanner]);
 
   const buyLegacyUpgrade = useCallback(
     (legacyId: string) => {
@@ -538,6 +972,12 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       unlockSkillNode,
       declareSovereignty,
       startNewKingdom,
+      startChallengeRun,
+      executeAscension,
+      buyCrownUpgrade,
+      useEdict,
+      grantEdict,
+      onSiegeCoinExpired,
       hardReset,
       setBuyMode,
       collectGoldenCoin,
@@ -562,6 +1002,12 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       unlockSkillNode,
       declareSovereignty,
       startNewKingdom,
+      startChallengeRun,
+      executeAscension,
+      buyCrownUpgrade,
+      useEdict,
+      grantEdict,
+      onSiegeCoinExpired,
       hardReset,
       setBuyMode,
       collectGoldenCoin,

@@ -2,6 +2,25 @@ import { BUILDINGS } from "./buildings";
 import { UPGRADES, UPGRADE_BY_ID } from "./upgrades";
 import type { GameState, ActiveBonus } from "./gameState";
 import { calculateLegacyBonuses } from "./legacyUpgrades";
+import {
+  getPlagueMultiplier,
+  getEntropyMultiplier,
+  getCrumblingMultiplier,
+  isBuildingDisabled,
+  isSkillTreeDisabled,
+  isOnlyAllowedBuilding,
+  getChallengeBuildingCostMultiplier,
+  getAusterityProgress,
+  calculateChallengeSeals,
+} from "./challenges";
+import {
+  getCrownGPSMultiplier,
+  getCrownClickMultiplier,
+  getCrownOfflineCap,
+  getCrownStartGold,
+  getCrownSealCostMultiplier,
+  getCrownEternalThroneBoost,
+} from "./ascension";
 
 export function getLegacyBonuses(state: GameState) {
   return calculateLegacyBonuses(
@@ -29,9 +48,23 @@ export function calculateBuildingGPS(
   activeBonus: ActiveBonus | null,
   runStartTime: number,
   now: number,
+  state?: GameState,
 ): number {
   const b = BUILDING_BY_ID[buildingId];
   if (!b || count <= 0) return 0;
+
+  // Challenge: Silent Market disables specific buildings
+  if (state && isBuildingDisabled(state, buildingId)) return 0;
+
+  // Challenge: One Building — all others produce 0
+  if (state && !isOnlyAllowedBuilding(state, buildingId)) return 0;
+
+  // Challenge: Forsaken — rat infestation debuff
+  const ratDebuffActive =
+    state &&
+    state.challenges.ratInfestationBuilding === buildingId &&
+    now < state.challenges.ratInfestationExpiry;
+
   let gps = b.baseGPS * count;
 
   // Per-building upgrade multipliers
@@ -48,36 +81,33 @@ export function calculateBuildingGPS(
     }
   }
 
-  // Skill tree building-specific
-  let commerceMult = 1;
-  // Merchant Guild: Market Stalls ×2
-  if (buildingId === "market_stall" && unlockedSkillNodes.includes("commerce_2a")) commerceMult *= 2;
-  // War Machine: Barracks and Castle Tower ×2
-  if (buildingId === "barracks" || buildingId === "castle_tower") {
-    if (unlockedSkillNodes.includes("military_2a")) gps *= 2;
-    if (unlockedSkillNodes.includes("war_drums")) gps *= 2;
-  }
-  // Sacred Rites: Cathedral ×2
-  if (buildingId === "cathedral" && unlockedSkillNodes.includes("faith_2a")) gps *= 2;
-  // Legacy of Builders: Palace ×3, Royal Treasury ×1.5
-  if (buildingId === "palace" && unlockedSkillNodes.includes("lineage_3b")) gps *= 3;
-  if (buildingId === "royal_treasury" && unlockedSkillNodes.includes("lineage_3b")) gps *= 1.5;
-
-  // Royal Exchange capstone: Market Stalls ×3 total (×2 base × additional ×1.5), building costs also handled in calculateBuildingCost
-  if (unlockedSkillNodes.includes("commerce_4") && buildingId === "market_stall") commerceMult *= 1.5;
-  gps *= commerceMult;
-
-  // Economic Union — cross branch: all buildings ×1.5
-  if (unlockedSkillNodes.includes("cross_1")) {
-    gps *= 1.5;
+  // Skill tree building-specific (disabled during Forsaken challenge)
+  const skillsActive = !state || !isSkillTreeDisabled(state);
+  if (skillsActive) {
+    let commerceMult = 1;
+    if (buildingId === "market_stall" && unlockedSkillNodes.includes("commerce_2a")) commerceMult *= 2;
+    if (buildingId === "barracks" || buildingId === "castle_tower") {
+      if (unlockedSkillNodes.includes("military_2a")) gps *= 2;
+      if (unlockedSkillNodes.includes("war_drums")) gps *= 2;
+    }
+    if (buildingId === "cathedral" && unlockedSkillNodes.includes("faith_2a")) gps *= 2;
+    if (buildingId === "palace" && unlockedSkillNodes.includes("lineage_3b")) gps *= 3;
+    if (buildingId === "royal_treasury" && unlockedSkillNodes.includes("lineage_3b")) gps *= 1.5;
+    if (unlockedSkillNodes.includes("commerce_4") && buildingId === "market_stall") commerceMult *= 1.5;
+    gps *= commerceMult;
+    if (unlockedSkillNodes.includes("cross_1")) gps *= 1.5;
+    if (unlockedSkillNodes.includes("faith_2b") && now - runStartTime < 60_000) gps *= 2;
   }
 
-  // Pilgrim Road — early-run boost: ×2 for first 60s
-  if (unlockedSkillNodes.includes("faith_2b") && now - runStartTime < 60_000) {
-    gps *= 2;
+  // Crown: Eternal Throne boost ×10
+  if (state && buildingId === "eternal_throne") {
+    gps *= getCrownEternalThroneBoost(state);
   }
 
-  // Active gps bonus
+  // Rat infestation debuff: 50% production
+  if (ratDebuffActive) gps *= 0.5;
+
+  // Active gps bonus (ad reward)
   if (activeBonus?.type === "gps_boost" && now < activeBonus.expiresAt && activeBonus.multiplier) {
     gps *= activeBonus.multiplier;
   }
@@ -87,6 +117,10 @@ export function calculateBuildingGPS(
 
 export function calculateTotalGPS(state: GameState, now: number = Date.now()): number {
   const legacy = getLegacyBonuses(state);
+  const totalBuildings = totalBuildingCount(state.buildings);
+  const skillsActive = !isSkillTreeDisabled(state);
+
+  // 1. Base GPS from buildings
   let total = 0;
   for (const b of BUILDINGS) {
     const count = state.buildings[b.id]?.count ?? 0;
@@ -98,52 +132,76 @@ export function calculateTotalGPS(state: GameState, now: number = Date.now()): n
       state.activeBonus,
       state.runStartTime,
       now,
+      state,
     );
     const perMult = legacy.perBuildingMult[b.id];
     if (perMult && perMult > 1) gps *= perMult;
     total += gps;
   }
 
-  // Global upgrades
+  // 2. Building upgrade multipliers (global effects from upgrades)
   for (const id of state.purchasedUpgrades) {
     const u = UPGRADE_BY_ID[id];
     if (!u) continue;
     for (const e of u.effects) {
       if (e.kind === "global_gps_mult" && e.multiplier) total *= e.multiplier;
       if (e.kind === "building_count_bonus" && e.value) {
-        const n = totalBuildingCount(state.buildings);
-        total *= 1 + n * e.value;
+        total *= 1 + totalBuildings * e.value;
       }
     }
   }
 
-  // Skill tree globals
-  if (state.unlockedSkillNodes.includes("commerce_1")) total *= 1.15;
-  if (state.unlockedSkillNodes.includes("cross_2")) total *= 1.5;
-  if (state.unlockedSkillNodes.includes("pinnacle")) total *= 5;
-  if (state.unlockedSkillNodes.includes("lineage_4")) {
-    const stacks = Math.min(state.prestigeCount, 10);
-    total *= Math.pow(1.3, stacks);
+  // 3. Skill tree global multipliers (disabled during Forsaken challenge)
+  if (skillsActive) {
+    if (state.unlockedSkillNodes.includes("commerce_1")) total *= 1.15;
+    if (state.unlockedSkillNodes.includes("cross_2")) total *= 1.5;
+    if (state.unlockedSkillNodes.includes("pinnacle")) total *= 5;
+    if (state.unlockedSkillNodes.includes("lineage_4")) {
+      total *= Math.pow(1.3, Math.min(state.prestigeCount, 10));
+    }
   }
 
+  // 4. Legacy multipliers
   total *= legacy.gpsMultiplier;
 
-  return total;
+  // 5. Edict boosts (timed GPS boosts from edicts)
+  for (const boost of state.edictBoosts ?? []) {
+    if (boost.type === "gps_boost" && now < boost.expiresAt) total *= boost.multiplier;
+  }
+
+  // 6. Crown: Sovereign Blood + Dynasty Eternal + Blood of Ascendants
+  total *= getCrownGPSMultiplier(state);
+
+  // 7. Challenge: Plague season GPS reduction
+  total *= getPlagueMultiplier(state);
+
+  // 8. Challenge: Entropy decay
+  total *= getEntropyMultiplier(state);
+
+  // 9. Challenge: Crumbling Realm penalty per building over threshold
+  total *= getCrumblingMultiplier(state, totalBuildings);
+
+  return Math.max(0, total);
 }
 
 export function calculateGoldPerClick(
   state: GameState,
   now: number = Date.now(),
 ): number {
-  let flat = 1;
+  // Idle Hands challenge: clicking does nothing (flat 1 gold)
+  if (state.challenges.active === "ch_idle") return 1;
+
   let mult = 1;
   const u = state.unlockedSkillNodes;
+  const skillsActive = !isSkillTreeDisabled(state);
 
-  if (u.includes("military_1")) mult *= 2;
-  if (u.includes("military_4")) mult *= 3;
-  if (u.includes("pinnacle")) mult *= 5;
+  if (skillsActive) {
+    if (u.includes("military_1")) mult *= 2;
+    if (u.includes("military_4")) mult *= 3;
+    if (u.includes("pinnacle")) mult *= 5;
+  }
 
-  // Click upgrades
+  // Click upgrades (always active regardless of challenge)
   for (const id of state.purchasedUpgrades) {
     const up = UPGRADE_BY_ID[id];
     if (!up) continue;
@@ -152,27 +210,31 @@ export function calculateGoldPerClick(
     }
   }
 
-  // Standing Army — 0.05% per building owned
-  if (u.includes("military_3a")) {
-    const n = totalBuildingCount(state.buildings);
-    mult *= 1 + n * 0.0005;
+  if (skillsActive) {
+    if (u.includes("military_3a")) {
+      mult *= 1 + totalBuildingCount(state.buildings) * 0.0005;
+    }
+    if (u.includes("lineage_4")) {
+      mult *= Math.pow(1.3, Math.min(state.prestigeCount, 10));
+    }
   }
 
-  // Lineage Eternal Throne stack: ×1.3 per prestige up to 10
-  if (u.includes("lineage_4")) {
-    const stacks = Math.min(state.prestigeCount, 10);
-    mult *= Math.pow(1.3, stacks);
-  }
-
-  if (state.activeBonus?.type === "click_boost" && now < state.activeBonus.expiresAt && state.activeBonus.multiplier) {
+  if (state.activeBonus?.type === "click_boost" && now < state.activeBonus.expiresAt) {
     mult *= state.activeBonus.multiplier;
   }
 
-  // Apply legacy click multiplier
+  // Edict click boosts
+  for (const boost of state.edictBoosts ?? []) {
+    if (boost.type === "click_boost" && now < boost.expiresAt) mult *= boost.multiplier;
+  }
+
   const legacy = getLegacyBonuses(state);
   mult *= legacy.clickMultiplier;
 
-  let result = flat * mult;
+  // Crown: Conqueror's Will
+  mult *= getCrownClickMultiplier(state);
+
+  let result = mult;
 
   // Royal Touch — max with 1% of GPS
   if (state.purchasedUpgrades.includes("click_2")) {
@@ -189,15 +251,21 @@ export function calculateBuildingCost(
   unlockedSkillNodes: string[],
   purchasedUpgrades: string[],
   legacyUpgrades: string[] = [],
+  state?: GameState,
 ): number {
   const b = BUILDING_BY_ID[buildingId];
   if (!b) return 0;
   let cost = Math.floor(b.baseCost * Math.pow(1.15, currentCount));
   if (unlockedSkillNodes.includes("commerce_2b")) cost = Math.floor(cost * 0.85);
   if (unlockedSkillNodes.includes("commerce_4")) cost = Math.floor(cost * 0.90);
+  // Crown: Crowned Wisdom reduces skill node costs (handled in skill tree UI)
   // Legacy — Kingdom Records: first of each type costs 50% less
   if (currentCount === 0 && legacyUpgrades.includes("legacy_2")) {
     cost = Math.floor(cost * 0.5);
+  }
+  // Challenge modifiers
+  if (state) {
+    cost = Math.floor(cost * getChallengeBuildingCostMultiplier(state));
   }
   return cost;
 }
@@ -239,19 +307,21 @@ export function calculateBuyMaxCount(
 export function calculatePrestigeSeals(state: GameState): number {
   const THRESHOLD = 100_000_000_000;
   if (state.totalGoldEarned < THRESHOLD) return 0;
-  // +5 seals per order of magnitude above threshold, plus 2 base — so first prestige
-  // at exactly 100B gives 2 seals, 1T gives 7, 100T gives 17, 1Q gives 22.
   let seals = Math.floor(Math.log10(state.totalGoldEarned / THRESHOLD) * 5) + 2;
   seals = Math.max(seals, 2);
-  // Legacy — Golden Legacy: +1% per prestige to seal income
   const legacy = getLegacyBonuses(state);
   if (legacy.sealIncomeBonus > 0) seals = Math.floor(seals * (1 + legacy.sealIncomeBonus));
   if (state.unlockedSkillNodes.includes("lineage_3a")) seals = Math.floor(seals * 1.5);
   if (state.unlockedSkillNodes.includes("lineage_2a")) seals += 1;
   if (state.unlockedSkillNodes.includes("military_4")) seals = Math.ceil(seals * 1.15);
   if (state.unlockedSkillNodes.includes("faith_4")) seals += 2;
+  // Apply challenge seal multiplier
+  seals = calculateChallengeSeals(seals, state);
   return Math.max(seals, 0);
 }
+
+/** Helper exported for challenge banner: austerity progress. */
+export { getAusterityProgress } from "./challenges";
 
 export function canPrestige(state: GameState): boolean {
   if (state.prestigePhase === "legacy_shop") return false;
@@ -264,10 +334,16 @@ export function applyOfflineProgress(
   state: GameState,
   currentTime: number,
 ): { goldEarned: number; secondsElapsed: number } {
+  // Challenge: The Long Night disables offline progress
+  if (state.challenges.active === "ch_night") {
+    return { goldEarned: 0, secondsElapsed: 0 };
+  }
   const elapsed = Math.max(0, (currentTime - state.lastTimestamp) / 1000);
-  const cap = state.unlockedSkillNodes.includes("faith_1") ? 21600 : 7200;
+  let cap = state.unlockedSkillNodes.includes("faith_1") ? 21600 : 7200;
+  // Crown: Iron Epoch extends to 12 hours (already 43200, larger than faith_1's 21600)
+  const crownCap = getCrownOfflineCap(state);
+  if (crownCap > cap) cap = crownCap;
   const capped = Math.min(elapsed, cap);
-  // Offline earnings are 50% of normal GPS
   const goldEarned = state.totalGPS * capped * 0.5;
   return { goldEarned, secondsElapsed: elapsed };
 }
