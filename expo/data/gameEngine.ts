@@ -236,13 +236,18 @@ export function calculateGoldPerClick(
 
   let result = mult;
 
-  // Royal Touch — max with 1% of GPS
+  // Kingdom Charter — add 1% of GPS per click (additive on base)
+  if (state.purchasedUpgrades.includes("global_3")) {
+    result += state.totalGPS * 0.01;
+  }
+
+  // Royal Touch — ensure click is at least 1% of GPS (max, after additives)
   if (state.purchasedUpgrades.includes("click_2")) {
     const fromGps = state.totalGPS * 0.01;
     if (fromGps > result) result = fromGps;
   }
 
-  return Math.max(1, Math.floor(result));
+  return Math.max(1, result);
 }
 
 export function calculateBuildingCost(
@@ -381,13 +386,10 @@ export function availableUpgrades(state: GameState) {
 }
 
 export function computeClickGoldReward(state: GameState, now: number = Date.now()): { add: number; flatSiegeBonus: number } {
+  // goldPerClick already includes Kingdom Charter and Royal Touch GPS scaling
   let add = state.goldPerClick;
   let siege = 0;
-  // Kingdom Charter — 1% of GPS per click
-  if (state.purchasedUpgrades.includes("global_3")) {
-    add += state.totalGPS * 0.01;
-  }
-  // Siege Tactics — 1% of GPS per click
+  // Siege Tactics — 1% of GPS per click (kept separate for siege mechanic)
   if (state.unlockedSkillNodes.includes("military_2b")) {
     siege += state.totalGPS * 0.01;
   }

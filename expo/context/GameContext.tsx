@@ -307,11 +307,15 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         gold = capGold(gold);
         totalGoldEarned = capGold(totalGoldEarned);
 
-        // Bonus expiry
+        // Bonus expiry (ad reward)
         if (activeBonus && now >= activeBonus.expiresAt) {
           activeBonus = null;
           needsRecalc = true;
         }
+
+        // Edict boost expiry — recalc so GPS/click drop is reflected immediately
+        const hadEdictBoosts = (prev.edictBoosts ?? []).some((b) => now >= b.expiresAt);
+        if (hadEdictBoosts) needsRecalc = true;
 
         // Golden coin spawn
         let nextCoin = prev.nextGoldenCoinTime;
