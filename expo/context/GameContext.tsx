@@ -416,6 +416,21 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
     }));
   }, []);
 
+  const debugAddCrowns = useCallback((amount: number) => {
+    setState((prev) => ({
+      ...prev,
+      ascension: { ...prev.ascension, crowns: prev.ascension.crowns + amount },
+    }));
+  }, []);
+
+  const debugAddSeals = useCallback((amount: number) => {
+    setState((prev) => ({
+      ...prev,
+      sealsAvailable: prev.sealsAvailable + amount,
+      sealsTotal: prev.sealsTotal + amount,
+    }));
+  }, []);
+
   const buyBuilding = useCallback(
     (buildingId: string, quantity: number | "max") => {
       setState((prev) => {
@@ -1024,6 +1039,8 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       buyLegacyUpgrade,
       legacyUpgrades: LEGACY_UPGRADES,
       debugAddGold,
+      debugAddCrowns,
+      debugAddSeals,
     }),
     [
       state,
@@ -1053,6 +1070,8 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       pushToast,
       buyLegacyUpgrade,
       debugAddGold,
+      debugAddCrowns,
+      debugAddSeals,
     ],
   );
 });
