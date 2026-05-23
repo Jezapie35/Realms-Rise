@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import AscensionIcon from "@/components/icons/ui/AscensionIcon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/constants/colors";
 import { useGame } from "@/context/GameContext";
@@ -67,10 +68,17 @@ export default function AscensionModal({ visible, onAscend, onClose }: Props) {
             onPress={() => setTab("crowns")}
             style={[styles.tab, tab === "crowns" && styles.tabActive]}
           >
-            <Text style={[styles.tabText, tab === "crowns" && styles.tabTextActive]}>
-              CROWN SHOP{"  "}
-              <Text style={styles.crownBalance}>♛ {crowns}</Text>
-            </Text>
+            <View style={styles.tabRow}>
+              <Text style={[styles.tabText, tab === "crowns" && styles.tabTextActive]}>
+                CROWN SHOP
+              </Text>
+              <View style={styles.tabBadge}>
+                <AscensionIcon size={14} />
+                <Text style={[styles.tabBadgeText, tab === "crowns" && styles.tabTextActive]}>
+                  {crowns}
+                </Text>
+              </View>
+            </View>
           </Pressable>
         </View>
 
@@ -216,16 +224,24 @@ export default function AscensionModal({ visible, onAscend, onClose }: Props) {
                                 !canAfford(u) && !owned && styles.cantAffordChip,
                               ]}
                             >
-                              <Text
-                                style={[
-                                  styles.costText,
-                                  owned && !pending && styles.ownedText,
-                                  pending && styles.pendingText,
-                                  !canAfford(u) && !owned && styles.cantAffordText,
-                                ]}
-                              >
-                                {owned ? (pending ? "NEXT RUN" : "OWNED") : `${u.cost} ♛`}
-                              </Text>
+                              {owned ? (
+                                <Text
+                                  style={[
+                                    styles.costText,
+                                    !pending && styles.ownedText,
+                                    pending && styles.pendingText,
+                                  ]}
+                                >
+                                  {pending ? "NEXT RUN" : "OWNED"}
+                                </Text>
+                              ) : (
+                                <View style={styles.costRow}>
+                                  <Text style={[styles.costText, !canAfford(u) && styles.cantAffordText]}>
+                                    {u.cost}
+                                  </Text>
+                                  <AscensionIcon size={14} />
+                                </View>
+                              )}
                             </View>
                           </View>
 
@@ -301,9 +317,26 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: COLORS.textGold,
   },
-  crownBalance: {
+  tabRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  tabBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  tabBadgeText: {
     color: COLORS.gold3,
+    fontFamily: FONTS.system,
     fontSize: 11,
+    fontWeight: "700",
+  },
+  costRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
   },
   scroll: {
     paddingHorizontal: 20,
