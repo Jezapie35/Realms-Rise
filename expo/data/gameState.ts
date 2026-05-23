@@ -18,6 +18,7 @@ export interface AscensionState {
   crowns: number;
   totalCrownsEarned: number;
   crownUpgrades: string[];
+  pendingCrownUpgrades: string[];
   crownFragments: number;
   totalFragmentsEarned: number;
   lifetimeGoldThisAscension: number;
@@ -60,6 +61,7 @@ export const DEFAULT_ASCENSION_STATE: AscensionState = {
   crowns: 0,
   totalCrownsEarned: 0,
   crownUpgrades: [],
+  pendingCrownUpgrades: [],
   crownFragments: 0,
   totalFragmentsEarned: 0,
   lifetimeGoldThisAscension: 0,

@@ -15,7 +15,6 @@ import ChallengeBanner from "@/components/ChallengeBanner";
 import EdictTray from "@/components/EdictTray";
 import PrestigeModal from "@/components/PrestigeModal";
 import AscensionModal from "@/components/AscensionModal";
-import CrownShopSheet from "@/components/CrownShopSheet";
 import SettingsModal from "@/components/SettingsModal";
 import AchievementsModal from "@/components/AchievementsModal";
 import SkillTreeSheet from "@/components/SkillTreeSheet";
@@ -49,10 +48,9 @@ export default function MainScreen() {
   const [showSkillTree, setShowSkillTree] = useState<boolean>(false);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [showAscension, setShowAscension] = useState<boolean>(false);
-  const [showCrownShop, setShowCrownShop] = useState<boolean>(false);
 
   const inLegacyShop = state.prestigePhase === "legacy_shop";
-  const showAscensionButton = state.prestigeCount >= 20;
+  const showAscensionButton = state.ascension.count > 0 || state.prestigeCount >= 20;
 
   useEffect(() => {
     if (inLegacyShop) setShowSkillTree(true);
@@ -120,6 +118,13 @@ export default function MainScreen() {
           </View>
         </View>
       )}
+      {showAscensionButton && (
+        <AscensionFooterButton
+          crowns={state.ascension.crowns}
+          pendingCount={state.ascension.pendingCrownUpgrades?.length ?? 0}
+          onPress={() => setShowAscension(true)}
+        />
+      )}
       <View style={{ height: 100 }} />
     </View>
   );
@@ -135,15 +140,6 @@ export default function MainScreen() {
           end={{ x: 1, y: 0.5 }}
           style={styles.headerRule}
         />
-        {showAscensionButton && (
-          <Pressable
-            onPress={() => setShowAscension(true)}
-            style={styles.settingsBtn}
-            testID="ascension-btn"
-          >
-            <Text style={styles.crownEmoji}>♛</Text>
-          </Pressable>
-        )}
         <Pressable
           onPress={() => setShowAchievements(true)}
           style={styles.settingsBtn}
@@ -211,15 +207,7 @@ export default function MainScreen() {
           setShowAscension(false);
           executeAscension();
         }}
-        onViewShop={() => {
-          setShowAscension(false);
-          setShowCrownShop(true);
-        }}
         onClose={() => setShowAscension(false)}
-      />
-      <CrownShopSheet
-        visible={showCrownShop}
-        onClose={() => setShowCrownShop(false)}
       />
       <SettingsModal
         visible={showSettings}
@@ -279,6 +267,30 @@ function PrestigeFooterButton({ reward, onPress }: { reward: number; onPress: ()
   );
 }
 
+function AscensionFooterButton({
+  crowns,
+  pendingCount,
+  onPress,
+}: {
+  crowns: number;
+  pendingCount: number;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={styles.ascensionBtn} testID="ascension-footer-btn">
+      <Text style={styles.ascensionEmoji}>♛</Text>
+      <View style={{ flex: 1, paddingHorizontal: 12 }}>
+        <Text style={styles.ascensionTitle}>ASCENSION</Text>
+        <Text style={styles.ascensionSub}>
+          {crowns} Crown{crowns === 1 ? "" : "s"} available
+          {pendingCount > 0 ? ` · ${pendingCount} pending` : ""}
+        </Text>
+      </View>
+      <ChevronRight color={COLORS.purple} size={22} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg2 },
   header: {
@@ -307,10 +319,6 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: "center",
     justifyContent: "center",
-  },
-  crownEmoji: {
-    color: COLORS.textGold,
-    fontSize: 22,
   },
   buyModeRow: {
     flexDirection: "row",
@@ -392,5 +400,33 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.serif,
     fontSize: 12,
     marginTop: 2,
+  },
+  ascensionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    minHeight: 72,
+    backgroundColor: COLORS.bg3,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.purple,
+  },
+  ascensionEmoji: {
+    color: COLORS.purpleLight,
+    fontSize: 28,
+  },
+  ascensionTitle: {
+    color: COLORS.purpleLight,
+    fontFamily: FONTS.serif,
+    fontStyle: "italic",
+    fontWeight: "800",
+    fontSize: 17,
+    letterSpacing: 1,
+  },
+  ascensionSub: {
+    color: COLORS.purple,
+    fontFamily: FONTS.serif,
+    fontSize: 13,
+    marginTop: 3,
   },
 });

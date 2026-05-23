@@ -170,11 +170,16 @@ export function buildPostAscensionState(
   const newCount = state.ascension.count + 1;
   const newCrowns = state.ascension.crowns + crownsEarned;
 
+  const allCrownUpgrades = [
+    ...new Set([...state.ascension.crownUpgrades, ...(state.ascension.pendingCrownUpgrades ?? [])]),
+  ];
+
   const newAscension: AscensionState = {
     count: newCount,
     crowns: newCrowns,
     totalCrownsEarned: state.ascension.totalCrownsEarned + crownsEarned,
-    crownUpgrades: [...state.ascension.crownUpgrades],
+    crownUpgrades: allCrownUpgrades,
+    pendingCrownUpgrades: [],
     crownFragments: state.ascension.crownFragments,
     totalFragmentsEarned: state.ascension.totalFragmentsEarned,
     lifetimeGoldThisAscension: 0,

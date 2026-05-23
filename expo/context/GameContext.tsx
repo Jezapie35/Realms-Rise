@@ -166,6 +166,9 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         const base = createInitialState();
         const migrated: GameState = { ...base, ...saved, saveVersion: SAVE_VERSION };
         if (!migrated.prestigePhase) migrated.prestigePhase = "playing";
+        if (!migrated.ascension.pendingCrownUpgrades) {
+          migrated.ascension = { ...migrated.ascension, pendingCrownUpgrades: [] };
+        }
         for (const b of BUILDINGS) {
           if (!migrated.buildings[b.id]) migrated.buildings[b.id] = { count: 0 };
         }
@@ -628,29 +631,39 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
     setState((prev) => {
       if (prev.prestigePhase !== "legacy_shop") return prev;
       const now = Date.now();
+
+      // Merge any pending crown purchases so their effects are active this kingdom
+      const mergedCrowns = [
+        ...new Set([...(prev.ascension.crownUpgrades ?? []), ...(prev.ascension.pendingCrownUpgrades ?? [])]),
+      ];
+      const prev_ = {
+        ...prev,
+        ascension: { ...prev.ascension, crownUpgrades: mergedCrowns, pendingCrownUpgrades: [] },
+      };
+
       const legacy = calculateLegacyBonuses(
-        prev.legacyUpgrades ?? [],
-        prev.sealsTotal,
-        prev.prestigeCount,
-        prev.lifetimeClicks ?? 0,
-        prev.lastRunGps,
+        prev_.legacyUpgrades ?? [],
+        prev_.sealsTotal,
+        prev_.prestigeCount,
+        prev_.lifetimeClicks ?? 0,
+        prev_.lastRunGps,
       );
-      const skillStartGold = prev.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
-      const crownStartGold = getCrownStartGold(prev);
+      const skillStartGold = prev_.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
+      const crownStartGold = getCrownStartGold(prev_);
       const startGold = capGold(skillStartGold + legacy.startingGold + crownStartGold);
       const buildings: Record<string, { count: number }> = {};
       for (const b of BUILDINGS) buildings[b.id] = { count: 0 };
 
       // Holy Order carry-overs (single or multi with crown)
       const purchasedUpgrades: string[] = [
-        ...(prev.carryOverUpgrades ?? []),
-        ...(prev.carryOverUpgrade && !prev.carryOverUpgrades?.includes(prev.carryOverUpgrade)
-          ? [prev.carryOverUpgrade]
+        ...(prev_.carryOverUpgrades ?? []),
+        ...(prev_.carryOverUpgrade && !prev_.carryOverUpgrades?.includes(prev_.carryOverUpgrade)
+          ? [prev_.carryOverUpgrade]
           : []),
       ].filter(Boolean);
 
       const fresh: GameState = {
-        ...prev,
+        ...prev_,
         gold: startGold,
         totalGoldEarned: startGold,
         buildings,
@@ -663,7 +676,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         lastTimestamp: now,
         runStartTime: now,
         lastInterestTick: now,
-        nextGoldenCoinTime: nextCoinTime(now, prev),
+        nextGoldenCoinTime: nextCoinTime(now, prev_),
         // NOTE: triggeredMilestones is intentionally NOT reset — achievements persist across prestiges
       };
       pushToast("A New Kingdom Rises", "Your legacy powers are now active.", "success");
@@ -680,15 +693,25 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         if (!isChallengeUnlocked(challenge, prev)) return prev;
 
         const now = Date.now();
+
+        // Merge pending crown purchases so their effects are active in the new run
+        const mergedCrowns = [
+          ...new Set([...(prev.ascension.crownUpgrades ?? []), ...(prev.ascension.pendingCrownUpgrades ?? [])]),
+        ];
+        const prev_ = {
+          ...prev,
+          ascension: { ...prev.ascension, crownUpgrades: mergedCrowns, pendingCrownUpgrades: [] },
+        };
+
         const legacy = calculateLegacyBonuses(
-          prev.legacyUpgrades ?? [],
-          prev.sealsTotal,
-          prev.prestigeCount,
-          prev.lifetimeClicks ?? 0,
-          prev.lastRunGps,
+          prev_.legacyUpgrades ?? [],
+          prev_.sealsTotal,
+          prev_.prestigeCount,
+          prev_.lifetimeClicks ?? 0,
+          prev_.lastRunGps,
         );
-        const skillStartGold = prev.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
-        const crownStartGold = getCrownStartGold(prev);
+        const skillStartGold = prev_.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
+        const crownStartGold = getCrownStartGold(prev_);
         const startGold = capGold(skillStartGold + legacy.startingGold + crownStartGold);
 
         const buildings: Record<string, { count: number }> = {};
@@ -696,10 +719,10 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
 
         const challenges: ChallengeState = {
           ...DEFAULT_CHALLENGE_STATE,
-          completed: prev.challenges.completed,
-          medals: prev.challenges.medals,
-          edicts: prev.challenges.edicts,
-          fragmentsEarned: prev.challenges.fragmentsEarned,
+          completed: prev_.challenges.completed,
+          medals: prev_.challenges.medals,
+          edicts: prev_.challenges.edicts,
+          fragmentsEarned: prev_.challenges.fragmentsEarned,
           active: challengeId,
           activeStartTime: now,
           activeTier: challenge.tier,
@@ -712,7 +735,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         };
 
         const fresh: GameState = {
-          ...prev,
+          ...prev_,
           gold: startGold,
           totalGoldEarned: startGold,
           buildings,
@@ -725,7 +748,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
           lastTimestamp: now,
           runStartTime: now,
           lastInterestTick: now,
-          nextGoldenCoinTime: nextCoinTime(now, prev),
+          nextGoldenCoinTime: nextCoinTime(now, prev_),
           challenges,
         };
 
@@ -757,32 +780,36 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
     });
   }, [pushToast, recalc]);
 
-  /** Buy a Crown upgrade from the Crown Shop. */
+  /** Buy a Crown upgrade. Effect is deferred until the next kingdom starts. */
   const buyCrownUpgrade = useCallback(
     (crownId: string) => {
       setState((prev) => {
         const upgrade = CROWN_BY_ID[crownId];
         if (!upgrade) return prev;
-        if (prev.ascension.crownUpgrades.includes(crownId)) return prev;
+        const allOwned = [
+          ...prev.ascension.crownUpgrades,
+          ...(prev.ascension.pendingCrownUpgrades ?? []),
+        ];
+        if (allOwned.includes(crownId)) return prev;
         if (prev.ascension.crowns < upgrade.cost) return prev;
         if (upgrade.requiresAscension && prev.ascension.count < upgrade.requiresAscension) return prev;
         for (const req of upgrade.requires) {
-          if (!prev.ascension.crownUpgrades.includes(req)) return prev;
+          if (!allOwned.includes(req)) return prev;
         }
         const next: GameState = {
           ...prev,
           ascension: {
             ...prev.ascension,
             crowns: prev.ascension.crowns - upgrade.cost,
-            crownUpgrades: [...prev.ascension.crownUpgrades, crownId],
+            pendingCrownUpgrades: [...(prev.ascension.pendingCrownUpgrades ?? []), crownId],
           },
         };
         hapticSkill();
-        pushToast(upgrade.name, upgrade.description, "success");
-        return recalc(next);
+        pushToast(upgrade.name, "Takes effect next kingdom", "success");
+        return next;
       });
     },
-    [pushToast, recalc],
+    [pushToast],
   );
 
   /** Use an edict from the player's inventory. */
