@@ -10,13 +10,25 @@ import {
   restorePurchases,
 } from "@/services/monetisation";
 
-const DEBUG_AMOUNTS = [
+const DEBUG_GOLD_AMOUNTS = [
   { label: "1K",   value: 1_000 },
   { label: "1M",   value: 1_000_000 },
   { label: "1B",   value: 1_000_000_000 },
   { label: "100B", value: 100_000_000_000 },
   { label: "1T",   value: 1_000_000_000_000 },
   { label: "1aa",  value: 1e21 },
+];
+const DEBUG_CROWN_AMOUNTS = [
+  { label: "+1",  value: 1 },
+  { label: "+5",  value: 5 },
+  { label: "+10", value: 10 },
+  { label: "+50", value: 50 },
+];
+const DEBUG_SEAL_AMOUNTS = [
+  { label: "+10",  value: 10 },
+  { label: "+50",  value: 50 },
+  { label: "+100", value: 100 },
+  { label: "+500", value: 500 },
 ];
 
 interface Props {
@@ -44,15 +56,22 @@ export default function SettingsModal({ visible, onClose, onHardReset }: Props) 
   const [iapLoading, setIapLoading] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [customGold, setCustomGold] = useState("");
+  const [customCrowns, setCustomCrowns] = useState("");
+  const [customSeals, setCustomSeals] = useState("");
   const { settings, setStrength, toggleEvent, setHideAcquiredAchievements } = useSettings();
-  const { debugAddGold, state } = useGame();
+  const { debugAddGold, debugAddCrowns, debugAddSeals, state } = useGame();
 
   const handleCustomGold = () => {
     const val = parseFloat(customGold.replace(/,/g, ""));
-    if (!isNaN(val) && val > 0) {
-      debugAddGold(val);
-      setCustomGold("");
-    }
+    if (!isNaN(val) && val > 0) { debugAddGold(val); setCustomGold(""); }
+  };
+  const handleCustomCrowns = () => {
+    const val = parseFloat(customCrowns.replace(/,/g, ""));
+    if (!isNaN(val) && val > 0) { debugAddCrowns(val); setCustomCrowns(""); }
+  };
+  const handleCustomSeals = () => {
+    const val = parseFloat(customSeals.replace(/,/g, ""));
+    if (!isNaN(val) && val > 0) { debugAddSeals(val); setCustomSeals(""); }
   };
 
   useEffect(() => {
@@ -175,14 +194,18 @@ export default function SettingsModal({ visible, onClose, onHardReset }: Props) 
 
             {showDebug && (
               <View style={styles.debugPanel}>
+                {/* Stats */}
                 <Text style={styles.debugGold}>
                   Gold: <Text style={{ color: COLORS.textGold }}>{state.gold.toLocaleString()}</Text>
                   {"  ·  "}Prestiges: <Text style={{ color: COLORS.textGold }}>{state.prestigeCount}</Text>
-                  {"  ·  "}Crowns: <Text style={{ color: COLORS.textGold }}>{state.ascension?.crowns ?? 0}</Text>
+                  {"  ·  "}Crowns: <Text style={{ color: COLORS.purpleLight }}>{state.ascension?.crowns ?? 0}</Text>
+                  {"  ·  "}Seals: <Text style={{ color: COLORS.gold3 }}>{state.sealsAvailable}</Text>
                 </Text>
+
+                {/* Gold */}
                 <Text style={styles.subLabel}>Quick Add Gold</Text>
                 <View style={styles.debugRow}>
-                  {DEBUG_AMOUNTS.map(({ label, value }) => (
+                  {DEBUG_GOLD_AMOUNTS.map(({ label, value }) => (
                     <Pressable
                       key={label}
                       onPress={() => debugAddGold(value)}
@@ -192,13 +215,12 @@ export default function SettingsModal({ visible, onClose, onHardReset }: Props) 
                     </Pressable>
                   ))}
                 </View>
-                <Text style={styles.subLabel}>Custom Amount</Text>
                 <View style={styles.customRow}>
                   <TextInput
                     style={styles.input}
                     value={customGold}
                     onChangeText={setCustomGold}
-                    placeholder="e.g. 500000"
+                    placeholder="custom gold"
                     placeholderTextColor={COLORS.textDim}
                     keyboardType="numeric"
                     returnKeyType="done"
@@ -209,6 +231,70 @@ export default function SettingsModal({ visible, onClose, onHardReset }: Props) 
                     style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.6 }]}
                   >
                     <Text style={styles.addBtnText}>Add</Text>
+                  </Pressable>
+                </View>
+
+                {/* Crowns */}
+                <Text style={[styles.subLabel, { color: COLORS.purpleLight }]}>Quick Add Crowns</Text>
+                <View style={styles.debugRow}>
+                  {DEBUG_CROWN_AMOUNTS.map(({ label, value }) => (
+                    <Pressable
+                      key={label}
+                      onPress={() => debugAddCrowns(value)}
+                      style={({ pressed }) => [styles.debugBtn, styles.debugBtnCrown, pressed && { opacity: 0.6 }]}
+                    >
+                      <Text style={styles.debugBtnCrownText}>{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={styles.customRow}>
+                  <TextInput
+                    style={styles.input}
+                    value={customCrowns}
+                    onChangeText={setCustomCrowns}
+                    placeholder="custom crowns"
+                    placeholderTextColor={COLORS.textDim}
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                    onSubmitEditing={handleCustomCrowns}
+                  />
+                  <Pressable
+                    onPress={handleCustomCrowns}
+                    style={({ pressed }) => [styles.addBtn, styles.addBtnCrown, pressed && { opacity: 0.6 }]}
+                  >
+                    <Text style={styles.addBtnCrownText}>Add</Text>
+                  </Pressable>
+                </View>
+
+                {/* Seals */}
+                <Text style={[styles.subLabel, { color: COLORS.gold3 }]}>Quick Add Royal Seals</Text>
+                <View style={styles.debugRow}>
+                  {DEBUG_SEAL_AMOUNTS.map(({ label, value }) => (
+                    <Pressable
+                      key={label}
+                      onPress={() => debugAddSeals(value)}
+                      style={({ pressed }) => [styles.debugBtn, styles.debugBtnSeal, pressed && { opacity: 0.6 }]}
+                    >
+                      <Text style={styles.debugBtnSealText}>{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={styles.customRow}>
+                  <TextInput
+                    style={styles.input}
+                    value={customSeals}
+                    onChangeText={setCustomSeals}
+                    placeholder="custom seals"
+                    placeholderTextColor={COLORS.textDim}
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                    onSubmitEditing={handleCustomSeals}
+                  />
+                  <Pressable
+                    onPress={handleCustomSeals}
+                    style={({ pressed }) => [styles.addBtn, styles.addBtnSeal, pressed && { opacity: 0.6 }]}
+                  >
+                    <Text style={styles.addBtnSealText}>Add</Text>
                   </Pressable>
                 </View>
               </View>
@@ -514,4 +600,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   addBtnText: { color: "#cc66ff", fontFamily: FONTS.serif, fontWeight: "800", fontSize: 14 },
+  debugBtnCrown: { borderColor: COLORS.purple },
+  debugBtnCrownText: { color: COLORS.purpleLight, fontFamily: FONTS.serif, fontWeight: "800", fontSize: 13 },
+  addBtnCrown: { backgroundColor: "#1a0030", borderWidth: 1, borderColor: COLORS.purple, borderRadius: RADIUS.md, paddingHorizontal: 20, justifyContent: "center" as const },
+  addBtnCrownText: { color: COLORS.purpleLight, fontFamily: FONTS.serif, fontWeight: "800", fontSize: 14 },
+  debugBtnSeal: { borderColor: COLORS.gold4 },
+  debugBtnSealText: { color: COLORS.gold3, fontFamily: FONTS.serif, fontWeight: "800", fontSize: 13 },
+  addBtnSeal: { backgroundColor: COLORS.gold5, borderWidth: 1, borderColor: COLORS.gold4, borderRadius: RADIUS.md, paddingHorizontal: 20, justifyContent: "center" as const },
+  addBtnSealText: { color: COLORS.gold3, fontFamily: FONTS.serif, fontWeight: "800", fontSize: 14 },
 });
