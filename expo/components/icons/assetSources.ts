@@ -23,6 +23,7 @@ export const ICON_SOURCES = {
   realms_forge: require('@/assets/images/realms_forge.png'),
   eternal_throne: require('@/assets/images/eternal_throne.png'),
   crown: require('@/assets/images/crown.png'),
+  ascension_robe: require('@/assets/images/ascension_robe.png'),
   skill_node: require('@/assets/images/skill_node.png'),
   coin: require('@/assets/images/coin.png'),
   seal: require('@/assets/images/seal.png'),

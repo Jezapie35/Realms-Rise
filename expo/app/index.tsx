@@ -20,6 +20,7 @@ import AchievementsModal from "@/components/AchievementsModal";
 import SkillTreeSheet from "@/components/SkillTreeSheet";
 import MilestoneToast from "@/components/MilestoneToast";
 import CrownIcon from "@/components/icons/ui/CrownIcon";
+import AscensionIcon from "@/components/icons/ui/AscensionIcon";
 import WatchAdButton from "@/components/WatchAdButton";
 
 const BUY_MODES: ("1" | "10" | "max" | "next")[] = ["1", "10", "max", "next"];
@@ -278,7 +279,7 @@ function AscensionFooterButton({
 }) {
   return (
     <Pressable onPress={onPress} style={styles.ascensionBtn} testID="ascension-footer-btn">
-      <Text style={styles.ascensionEmoji}>♛</Text>
+      <AscensionIcon size={48} />
       <View style={{ flex: 1, paddingHorizontal: 12 }}>
         <Text style={styles.ascensionTitle}>ASCENSION</Text>
         <Text style={styles.ascensionSub}>
@@ -410,10 +411,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.purple,
-  },
-  ascensionEmoji: {
-    color: COLORS.purpleLight,
-    fontSize: 28,
   },
   ascensionTitle: {
     color: COLORS.purpleLight,
