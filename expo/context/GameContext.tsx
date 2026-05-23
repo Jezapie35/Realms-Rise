@@ -169,11 +169,14 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         for (const b of BUILDINGS) {
           if (!migrated.buildings[b.id]) migrated.buildings[b.id] = { count: 0 };
         }
-        // Apply offline progress
+        // Apply offline progress (skip during legacy shop — gold is 0 and should stay 0)
         const preGps = calculateTotalGPS(migrated, now);
-        const offline = applyOfflineProgress({ ...migrated, totalGPS: preGps }, now);
-        migrated.gold += offline.goldEarned;
-        migrated.totalGoldEarned += offline.goldEarned;
+        const offline =
+          migrated.prestigePhase === "legacy_shop"
+            ? { goldEarned: 0, secondsElapsed: 0 }
+            : applyOfflineProgress({ ...migrated, totalGPS: preGps }, now);
+        migrated.gold = capGold(migrated.gold + offline.goldEarned);
+        migrated.totalGoldEarned = capGold(migrated.totalGoldEarned + offline.goldEarned);
         migrated.lastTimestamp = now;
         migrated.lastInterestTick = now;
         if (migrated.activeBonus && now >= migrated.activeBonus.expiresAt) migrated.activeBonus = null;
@@ -596,6 +599,9 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         const next: GameState = {
           ...prev,
           gold: 0,
+          totalGoldEarned: 0,
+          totalGPS: 0,       // zero out so offline progress can't accumulate during legacy shop
+          goldPerClick: 1,
           prestigeCount: prev.prestigeCount + 1,
           sealsAvailable: prev.sealsAvailable + reward,
           sealsTotal: prev.sealsTotal + reward,
@@ -631,7 +637,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
       );
       const skillStartGold = prev.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
       const crownStartGold = getCrownStartGold(prev);
-      const startGold = skillStartGold + legacy.startingGold + crownStartGold;
+      const startGold = capGold(skillStartGold + legacy.startingGold + crownStartGold);
       const buildings: Record<string, { count: number }> = {};
       for (const b of BUILDINGS) buildings[b.id] = { count: 0 };
 
@@ -683,7 +689,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         );
         const skillStartGold = prev.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
         const crownStartGold = getCrownStartGold(prev);
-        const startGold = skillStartGold + legacy.startingGold + crownStartGold;
+        const startGold = capGold(skillStartGold + legacy.startingGold + crownStartGold);
 
         const buildings: Record<string, { count: number }> = {};
         for (const b of BUILDINGS) buildings[b.id] = { count: 0 };
