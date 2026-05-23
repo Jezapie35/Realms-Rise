@@ -181,7 +181,8 @@ export function calculateTotalGPS(state: GameState, now: number = Date.now()): n
   // 9. Challenge: Crumbling Realm penalty per building over threshold
   total *= getCrumblingMultiplier(state, totalBuildings);
 
-  return Math.max(0, total);
+  const result = Math.max(0, total);
+  return isFinite(result) ? Math.min(result, 1e250) : 0;
 }
 
 export function calculateGoldPerClick(
@@ -302,7 +303,7 @@ export function calculateBuyMaxCount(
   let n = 0;
   while (n < 10000) {
     const c = calculateBuildingCost(buildingId, currentCount + n, unlockedSkillNodes, purchasedUpgrades, legacyUpgrades);
-    if (gold < c) break;
+    if (gold < c || gold - c === gold) break;
     gold -= c;
     n += 1;
   }
@@ -311,7 +312,7 @@ export function calculateBuyMaxCount(
 
 export function calculatePrestigeSeals(state: GameState): number {
   const THRESHOLD = 100_000_000_000;
-  if (state.totalGoldEarned < THRESHOLD) return 0;
+  if (!isFinite(state.totalGoldEarned) || state.totalGoldEarned < THRESHOLD) return 0;
   let seals = Math.floor(Math.log10(state.totalGoldEarned / THRESHOLD) * 5) + 2;
   seals = Math.max(seals, 2);
   const legacy = getLegacyBonuses(state);
@@ -349,7 +350,8 @@ export function applyOfflineProgress(
   const crownCap = getCrownOfflineCap(state);
   if (crownCap > cap) cap = crownCap;
   const capped = Math.min(elapsed, cap);
-  const goldEarned = state.totalGPS * capped * 0.5;
+  const safeGPS = isFinite(state.totalGPS) ? state.totalGPS : 0;
+  const goldEarned = safeGPS * capped * 0.5;
   return { goldEarned, secondsElapsed: elapsed };
 }
 

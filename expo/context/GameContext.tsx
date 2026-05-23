@@ -172,6 +172,19 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         for (const b of BUILDINGS) {
           if (!migrated.buildings[b.id]) migrated.buildings[b.id] = { count: 0 };
         }
+        // Sanitize numeric fields that may be null/NaN/Infinity from corrupted saves
+        const safeNum = (v: unknown, fallback = 0) => {
+          const n = typeof v === "number" ? v : Number(v);
+          return isFinite(n) && n >= 0 ? n : fallback;
+        };
+        migrated.gold = safeNum(migrated.gold);
+        migrated.totalGoldEarned = safeNum(migrated.totalGoldEarned);
+        migrated.lifetimeGoldAllTime = safeNum(migrated.lifetimeGoldAllTime);
+        migrated.totalGPS = safeNum(migrated.totalGPS);
+        migrated.lastRunGps = safeNum(migrated.lastRunGps);
+        migrated.sealsAvailable = safeNum(migrated.sealsAvailable);
+        migrated.sealsTotal = safeNum(migrated.sealsTotal);
+        migrated.ascension.lifetimeGoldThisAscension = safeNum(migrated.ascension.lifetimeGoldThisAscension);
         // Apply offline progress (skip during legacy shop — gold is 0 and should stay 0)
         const preGps = calculateTotalGPS(migrated, now);
         const offline =
@@ -626,7 +639,7 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
           prestigePhase: "legacy_shop",
           carryOverUpgrade: carryOverUpgrades[0] ?? null,
           carryOverUpgrades,
-          lastRunGps: prev.totalGPS,
+          lastRunGps: isFinite(prev.totalGPS) ? Math.max(0, prev.totalGPS) : 0,
           lastTimestamp: now,
           challenges,
         };
@@ -656,12 +669,13 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
         ascension: { ...prev.ascension, crownUpgrades: mergedCrowns, pendingCrownUpgrades: [] },
       };
 
+      const safeLastRunGps = isFinite(prev_.lastRunGps) ? Math.max(0, prev_.lastRunGps) : 0;
       const legacy = calculateLegacyBonuses(
         prev_.legacyUpgrades ?? [],
         prev_.sealsTotal,
         prev_.prestigeCount,
         prev_.lifetimeClicks ?? 0,
-        prev_.lastRunGps,
+        safeLastRunGps,
       );
       const skillStartGold = prev_.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
       const crownStartGold = getCrownStartGold(prev_);
@@ -718,12 +732,13 @@ export const [GameProvider, useGameInternal] = createContextHook(() => {
           ascension: { ...prev.ascension, crownUpgrades: mergedCrowns, pendingCrownUpgrades: [] },
         };
 
+        const safeLastRunGps = isFinite(prev_.lastRunGps) ? Math.max(0, prev_.lastRunGps) : 0;
         const legacy = calculateLegacyBonuses(
           prev_.legacyUpgrades ?? [],
           prev_.sealsTotal,
           prev_.prestigeCount,
           prev_.lifetimeClicks ?? 0,
-          prev_.lastRunGps,
+          safeLastRunGps,
         );
         const skillStartGold = prev_.unlockedSkillNodes.includes("lineage_1") ? 500 : 0;
         const crownStartGold = getCrownStartGold(prev_);

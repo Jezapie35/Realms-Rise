@@ -92,7 +92,8 @@ export function calculateLegacyBonuses(
   // legacy_12: 1% per seal (was 2%)
   if (has("legacy_12")) gpsMult *= 1 + sealsTotal * 0.01;
   // legacy_13: 30s of prev GPS (was 60s)
-  if (has("legacy_13")) startingGold += prevRunGps * 30;
+  const safeGps = isFinite(prevRunGps) && prevRunGps >= 0 ? prevRunGps : 0;
+  if (has("legacy_13")) startingGold += safeGps * 30;
   // legacy_14: +3% per prestige (was +5%)
   if (has("legacy_14")) gpsMult *= 1 + prestigeCount * 0.03;
   // legacy_15: 0.0005% per lifetime click (was 0.001%)
